@@ -24,7 +24,7 @@ public class Waver {
 		waveWidth = _waveWidth;
 		freq = _freq;
 		color = _color;
-		timeLeft = freq;
+		timeLeft = 1; //is good
 
 	}
 

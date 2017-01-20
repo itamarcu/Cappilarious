@@ -6,6 +6,7 @@ public class Wave {
 	double width;
 	double speed;
 	public static Color purple = new Color(196, 0, 255, 80);
+	public static int maxR1 = 1000;
 	Color color;
 
 	public Wave(double originX, double originY, double _speed, double _width, Color _color) {

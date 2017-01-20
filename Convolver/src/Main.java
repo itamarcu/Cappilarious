@@ -28,53 +28,71 @@ import java.util.List;
 
 import javax.swing.JFrame;
 
-class Main extends JFrame implements KeyListener, MouseListener, MouseMotionListener, MouseWheelListener,
-		ComponentListener, WindowFocusListener {
+class Main extends JFrame implements KeyListener, MouseListener, MouseMotionListener, MouseWheelListener, ComponentListener, WindowFocusListener
+{
 	// Constants
-	final double TAU = 2 * Math.PI;
+	final double				TAU					= 2 * Math.PI;
 
 	// Variables
-	boolean leftMousePressed = false;
-	boolean leftPressed, rightPressed, upPressed, downPressed;
-	Point camera; // Marks the CENTER of the screen to be drawn, not the top
-					// left point
+	boolean						leftMousePressed	= false;
+	boolean						leftPressed, rightPressed, upPressed, downPressed;
+	Point						camera;												// Marks the CENTER of the screen to be drawn, not the top
+																					// left point
 
-	double timeThatPassed;
+	double						timeThatPassed;
 
-	List<Wave> waves;
-	List<Waver> wavers;
+	List<Wave>					waves;
+	List<Waver>					wavers;
+	Player						player;
 
 	// Stuff that should not be touched
-	private static final long serialVersionUID = 1;
-	int frameHeight, frameWidth;
-	PointerInfo pin; // Don't use this
-	Point incorrectMousePoint = new Point(); // Don't use that
-	int mx = 0; // Mouse X coordinate relative to FRAME
-	int my = 0; // Mouse Y coordinate relative to FRAME
-	int bufferWidth; // ignore
-	int bufferHeight; // ignore
-	Image bufferImage; // ignore, unless you want to do stuff with this
-	Graphics bufferGraphics; // ignore
+	private static final long	serialVersionUID	= 1;
+	int							frameHeight, frameWidth;
+	PointerInfo					pin;												// Don't use this
+	Point						incorrectMousePoint	= new Point();					// Don't use that
+	int							mx					= 0;							// Mouse X coordinate relative to FRAME
+	int							my					= 0;							// Mouse Y coordinate relative to FRAME
+	int							bufferWidth;										// ignore
+	int							bufferHeight;										// ignore
+	Image						bufferImage;										// ignore, unless you want to do stuff with this
+	Graphics					bufferGraphics;										// ignore
 
 	// This is where the magic happens
-	void gameFrame(double deltaTime) {
+	void gameFrame(double deltaTime)
+	{
 		timeThatPassed += deltaTime;
-		for (int i = 0; i < waves.size(); i++) {
+		for (int i = 0; i < waves.size(); i++)
+		{
 			Wave w = waves.get(i);
 			w.update(deltaTime);
+			if (w.r1 > Wave.maxR1)
+			{
+				w.width -= 60 * deltaTime;
+				w.r1 += 60 * deltaTime;
+				if (w.width <= 0)
+				{
+					waves.remove(i);
+					i--;
+					continue;
+				}
+			}
 		}
-		for (int i = 0; i < wavers.size(); i++) {
+		for (int i = 0; i < wavers.size(); i++)
+		{
 			Waver wr = wavers.get(i);
 			wr.update(deltaTime);
-			if (wr.timeLeft <= 0) {
+			if (wr.timeLeft <= 0)
+			{
 				waves.add(wr.generateWave());
 			}
 		}
+		movePlayer(deltaTime);
 	}
 
 	// This is what you use to call draw methods or to just draw. Is called in
 	// the repaint() method which is called after every frame.
-	void paintBuffer(final Graphics g) {
+	void paintBuffer(final Graphics g)
+	{
 		Graphics2D buffer = (Graphics2D) g;
 
 		// Move "camera" to position
@@ -84,29 +102,38 @@ class Main extends JFrame implements KeyListener, MouseListener, MouseMotionList
 
 		// Draw stuff
 
-		buffer.drawOval(-20, -20, 40, 40);
 		// Waves
-		for (int i = 0; i < waves.size(); i++) {
+		for (int i = 0; i < waves.size(); i++)
+		{
 			// Draw outlines
 			Wave w = waves.get(i);
 			buffer.setColor(w.color);
-			if (w.r2 <= w.width) {
+			if (w.r2 <= w.width)
+			{
 				buffer.fillOval((int) (w.cx - w.r2), (int) (w.cy - w.r2), (int) (2 * w.r2), (int) (2 * w.r2));
-			} else {
+			} else
+			{
 				buffer.setStroke(new BasicStroke((int) (w.width)));
-				buffer.drawOval((int) (w.cx - w.r2 + w.width / 2), (int) (w.cy - w.r2 + w.width / 2),
-						(int) (2 * (w.r2 - w.width / 2)), (int) (2 * (w.r2 - w.width / 2)));
+				buffer.drawOval((int) (w.cx - w.r2 + w.width / 2), (int) (w.cy - w.r2 + w.width / 2), (int) (2 * (w.r2 - w.width / 2)), (int) (2 * (w.r2 - w.width / 2)));
 			}
 		}
 
 		// Wavers
-		for (Waver wr : wavers) {
+		for (Waver wr : wavers)
+		{
 			// Draw plus sign
 			buffer.setStroke(new BasicStroke(2));
 			buffer.setColor(new Color(255 - (int) (255 * wr.timeLeft / wr.freq), 0, 0));
 			buffer.drawLine((int) (wr.x), (int) (wr.y - 20), (int) (wr.x), (int) (wr.y + 20));
 			buffer.drawLine((int) (wr.x - 20), (int) (wr.y), (int) (wr.x + 20), (int) (wr.y));
 		}
+
+		// Player
+		buffer.setStroke(new BasicStroke(2));
+		buffer.setColor(Color.ORANGE);
+		buffer.fillOval((int) (player.x - Player.radius), (int) (player.y - Player.radius), 2 * Player.radius, 2 * Player.radius);
+		buffer.setColor(Color.BLACK);
+		buffer.drawOval((int) (player.x - Player.radius), (int) (player.y - Player.radius), 2 * Player.radius, 2 * Player.radius);
 
 		// Move camera back
 		buffer.setTransform(original);
@@ -119,7 +146,8 @@ class Main extends JFrame implements KeyListener, MouseListener, MouseMotionList
 	}
 
 	// Setup of everything! Put stuff in here, not in Main()!
-	void restart() {
+	void restart()
+	{
 		camera = new Point(0, 0);
 		leftMousePressed = false;
 		leftPressed = false;
@@ -131,15 +159,58 @@ class Main extends JFrame implements KeyListener, MouseListener, MouseMotionList
 		waves = new ArrayList<Wave>();
 		wavers = new ArrayList<Waver>();
 
+		player = new Player(0, 0);
+
 		wavers.add(new Waver(300, 150, 100, 240, 9.0, Wave.purple));
 		wavers.add(new Waver(-300, -350, 100, 240, 9.0, Wave.purple));
 		wavers.add(new Waver(100, 550, 100, 240, 9.0, Wave.purple));
 	}
 
+	void movePlayer(double deltaTime)
+	{
+		for (int i = 0; i < waves.size(); i++)
+		{
+			Wave w = waves.get(i);
+			if (w.contains(player.x, player.y))
+				player.lastWaveIndex = i;
+		}
+		double verticalMovement = 0, horizontalMovement = 0;
+		if (upPressed)
+			verticalMovement -= 1;
+		if (downPressed)
+			verticalMovement += 1;
+		if (leftPressed)
+			horizontalMovement -= 1;
+		if (rightPressed)
+			horizontalMovement += 1;
+		if (horizontalMovement != 0 && verticalMovement != 0)
+		{
+			horizontalMovement *= 0.7072;
+			verticalMovement *= 0.7072;
+		}
+		player.xVel += Player.acceleration * horizontalMovement;
+		player.yVel += Player.acceleration * verticalMovement;
+		double vel2 = player.xVel * player.xVel + player.yVel * player.yVel;
+		double ratio = Math.abs(vel2 / Player.maxSpeedPow2);
+		if (ratio > 1)
+		{
+			player.xVel /= ratio;
+			player.yVel /= ratio;
+		} else if (horizontalMovement == 0 && verticalMovement == 0)
+		{
+			player.xVel *= 0.9;
+			player.yVel *= 0.9;
+		}
+		player.x += deltaTime * player.xVel;
+		player.y += deltaTime * player.yVel;
+	}
+
 	// Is called when you start to press a key, and then keeps being called
 	// until you stop pressing the key
-	public void keyPressed(final KeyEvent e) {
-		switch (e.getKeyCode()) {
+	public void keyPressed(final KeyEvent e)
+	{
+		switch (e.getKeyCode())
+		{
 		case KeyEvent.VK_R:// Restart
 			restart();
 			break;
@@ -169,8 +240,10 @@ class Main extends JFrame implements KeyListener, MouseListener, MouseMotionList
 	}
 
 	// Is called when you stop pressing a key
-	public void keyReleased(final KeyEvent e) {
-		switch (e.getKeyCode()) {
+	public void keyReleased(final KeyEvent e)
+	{
+		switch (e.getKeyCode())
+		{
 		case KeyEvent.VK_LEFT:
 		case KeyEvent.VK_A:
 			leftPressed = false;
@@ -194,13 +267,16 @@ class Main extends JFrame implements KeyListener, MouseListener, MouseMotionList
 	}
 
 	// Start of the program. Set-up stuff happens in restart(), NOT in here!
-	public Main() {
+	public Main()
+	{
 		setSize(640, 640); // will be the size if window stops being maximized
 		setResizable(true);
 		setFocusTraversalKeysEnabled(false);
 		setExtendedState(Frame.MAXIMIZED_BOTH);
-		addWindowListener(new WindowAdapter() {
-			public void windowClosing(WindowEvent we) {
+		addWindowListener(new WindowAdapter()
+		{
+			public void windowClosing(WindowEvent we)
+			{
 				exitGame();
 			}
 		});
@@ -218,20 +294,23 @@ class Main extends JFrame implements KeyListener, MouseListener, MouseMotionList
 	}
 
 	// Just don't change the main() method
-	public static void main(String[] args) {
+	public static void main(String[] args)
+	{
 		Main main = new Main();
 		main.restart();
 		main.mainLoop();
 	}
 
 	// Main loop. You probably shouldn't change the code here.
-	void mainLoop() {
+	void mainLoop()
+	{
 		long lastLoopTime = System.nanoTime();
 		final int TARGET_FPS = 60;
 		final long OPTIMAL_TIME = 1000000000 / TARGET_FPS;
 
 		// keep looping until the game ends
-		while (true) {
+		while (true)
+		{
 			// work out how long its been since the last update
 			long now = System.nanoTime();
 			long updateLength = now - lastLoopTime;
@@ -244,9 +323,11 @@ class Main extends JFrame implements KeyListener, MouseListener, MouseMotionList
 			// draw everyting
 			repaint();
 
-			try {
+			try
+			{
 				Thread.sleep((lastLoopTime - System.nanoTime() + OPTIMAL_TIME) / 1000000);
-			} catch (Exception e) {
+			} catch (Exception e)
+			{
 				e.printStackTrace();
 			}
 			;
@@ -254,22 +335,26 @@ class Main extends JFrame implements KeyListener, MouseListener, MouseMotionList
 	}
 
 	// When you exit the game
-	void exitGame() {
+	void exitGame()
+	{
 		System.exit(0);
 	}
 
 	// IGNORE
-	private void adjustbuffer() {
+	private void adjustbuffer()
+	{
 		// getting image size
 		bufferWidth = getSize().width;
 		bufferHeight = getSize().height;
 
 		// clean buffered image
-		if (bufferGraphics != null) {
+		if (bufferGraphics != null)
+		{
 			bufferGraphics.dispose();
 			bufferGraphics = null;
 		}
-		if (bufferImage != null) {
+		if (bufferImage != null)
+		{
 			bufferImage.flush();
 			bufferImage = null;
 		}
@@ -281,18 +366,20 @@ class Main extends JFrame implements KeyListener, MouseListener, MouseMotionList
 	}
 
 	// IGNORE
-	public void update(final Graphics g) {
+	public void update(final Graphics g)
+	{
 		paint(g);
 	}
 
 	// IGNORE
-	public void paint(final Graphics g) {
+	public void paint(final Graphics g)
+	{
 		// Resetting the buffered Image
-		if (bufferWidth != getSize().width || bufferHeight != getSize().height || bufferImage == null
-				|| bufferGraphics == null)
+		if (bufferWidth != getSize().width || bufferHeight != getSize().height || bufferImage == null || bufferGraphics == null)
 			adjustbuffer();
 
-		if (bufferGraphics != null) {
+		if (bufferGraphics != null)
+		{
 			// this clears the offscreen image, not the onscreen one
 			bufferGraphics.clearRect(0, 0, bufferWidth, bufferHeight);
 
@@ -305,12 +392,14 @@ class Main extends JFrame implements KeyListener, MouseListener, MouseMotionList
 	}
 
 	// IGNORE
-	public void keyTyped(final KeyEvent e) {
+	public void keyTyped(final KeyEvent e)
+	{
 
 	}
 
 	// IGNORE
-	public void mouseDragged(final MouseEvent me) {
+	public void mouseDragged(final MouseEvent me)
+	{
 		// Getting mouse info
 		pin = MouseInfo.getPointerInfo();
 		incorrectMousePoint = pin.getLocation();
@@ -319,41 +408,49 @@ class Main extends JFrame implements KeyListener, MouseListener, MouseMotionList
 	}
 
 	// IGNORE
-	public void mouseClicked(final MouseEvent me) {
+	public void mouseClicked(final MouseEvent me)
+	{
 	}
 
 	// IGNORE
-	public void mouseEntered(final MouseEvent me) {
+	public void mouseEntered(final MouseEvent me)
+	{
 	}
 
 	// IGNORE
-	public void componentHidden(ComponentEvent arg0) {
+	public void componentHidden(ComponentEvent arg0)
+	{
 
 	}
 
 	// When the window is resized by the user
-	public void componentResized(ComponentEvent e) {
+	public void componentResized(ComponentEvent e)
+	{
 		frameWidth = (int) this.getBounds().getWidth();
 		frameHeight = (int) this.getBounds().getHeight();
 	}
 
 	// IGNORE
-	public void componentMoved(ComponentEvent arg0) {
+	public void componentMoved(ComponentEvent arg0)
+	{
 
 	}
 
 	// IGNORE
-	public void componentShown(ComponentEvent arg0) {
+	public void componentShown(ComponentEvent arg0)
+	{
 
 	}
 
 	// IGNORE
-	public void mouseExited(final MouseEvent me) {
+	public void mouseExited(final MouseEvent me)
+	{
 
 	}
 
 	// Mouse position changed
-	public void mouseMoved(final MouseEvent me) {
+	public void mouseMoved(final MouseEvent me)
+	{
 		// Getting mouse info
 		pin = MouseInfo.getPointerInfo();
 		incorrectMousePoint = pin.getLocation();
@@ -362,7 +459,8 @@ class Main extends JFrame implements KeyListener, MouseListener, MouseMotionList
 	}
 
 	// Mouse was pressed
-	public void mousePressed(final MouseEvent me) {
+	public void mousePressed(final MouseEvent me)
+	{
 		// BUTTON1 = left click
 		// BUTTON2 = mid click (scroll wheel click),
 		// BUTTON3 = right click
@@ -375,7 +473,8 @@ class Main extends JFrame implements KeyListener, MouseListener, MouseMotionList
 	}
 
 	// Mouse was unpressed
-	public void mouseReleased(final MouseEvent me) {
+	public void mouseReleased(final MouseEvent me)
+	{
 		if (me.getButton() == MouseEvent.BUTTON1) // Left Click
 		{
 			leftMousePressed = false;
@@ -383,17 +482,20 @@ class Main extends JFrame implements KeyListener, MouseListener, MouseMotionList
 	}
 
 	// Window gained focus
-	public void windowGainedFocus(WindowEvent arg0) {
+	public void windowGainedFocus(WindowEvent arg0)
+	{
 
 	}
 
 	// Window lost focus
-	public void windowLostFocus(WindowEvent arg0) {
+	public void windowLostFocus(WindowEvent arg0)
+	{
 
 	}
 
 	// Mouse was scrolled up/down
-	public void mouseWheelMoved(MouseWheelEvent arg0) {
+	public void mouseWheelMoved(MouseWheelEvent arg0)
+	{
 		@SuppressWarnings("unused")
 		boolean direction = arg0.getWheelRotation() == 1 ? true : false;
 	}
