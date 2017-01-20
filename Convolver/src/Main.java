@@ -122,8 +122,11 @@ class Main extends JFrame implements KeyListener, MouseListener, MouseMotionList
 				continue;
 			}
 			t.chargeTimeLeft -= deltaTime;
-			if (t.chargeTimeLeft < t.chargeDelay - 1) // not dashing
-				t.rotation += deltaTime * t.chargeTimeLeft / 5 * 12; // variable rotation speed
+			if (t.chargeTimeLeft < t.chargeDelay - 1.1) // not dashing
+				if (t.chargeTimeLeft > 0.9) // not dashing
+					t.rotation += deltaTime * t.chargeTimeLeft / 5 * 12; // variable rotation speed
+				else
+					t.rotation = lerpAngle(t.rotation, Math.atan2(player.y - t.y, player.x - t.x), deltaTime * 3.5);
 			t.x += t.xVel * deltaTime;
 			t.y += t.yVel * deltaTime;
 			double speedPow2 = t.xVel * t.xVel + t.yVel * t.yVel;
@@ -136,10 +139,9 @@ class Main extends JFrame implements KeyListener, MouseListener, MouseMotionList
 			if (t.chargeTimeLeft < t.chargeDelay - 1 && speedPow2 > 0) // un-dashing
 			{
 				double distPow2 = Math.pow(player.x - t.x, 2) + Math.pow(player.y - t.y, 2);
-				System.out.println(distPow2);
 				if (distPow2 < t.prevDistPow2)
 					t.prevDistPow2 = distPow2;
-				else if (distPow2 - 25000 > t.prevDistPow2)
+				else if (distPow2 - 2500 > t.prevDistPow2)
 				{
 					t.slowDown = true;
 				}
@@ -147,9 +149,8 @@ class Main extends JFrame implements KeyListener, MouseListener, MouseMotionList
 				{
 					t.xVel -= 3 * t.xVel * deltaTime;
 					t.yVel -= 3 * t.yVel * deltaTime;
-				}
-				else
-					t.chargeTimeLeft += deltaTime/2;
+				} else
+					t.chargeTimeLeft += deltaTime;
 			}
 			if (t.chargeTimeLeft < 0) // begin dash
 			{
@@ -158,6 +159,7 @@ class Main extends JFrame implements KeyListener, MouseListener, MouseMotionList
 				t.xVel = 10 * Math.cos(angle);
 				t.yVel = 10 * Math.sin(angle);
 				t.slowDown = false;
+				t.prevDistPow2 = 9999999;
 			}
 		}
 		eventTimeLeft -= deltaTime;
@@ -229,13 +231,20 @@ class Main extends JFrame implements KeyListener, MouseListener, MouseMotionList
 			int[] yPoints = new int[3];
 			for (int i = 0; i < 3; i++)
 			{
-				xPoints[i] = (int) (t.x + Tringler.radius * Math.cos(t.rotation + TAU / 3 * i));
-				yPoints[i] = (int) (t.y + Tringler.radius * Math.sin(t.rotation + TAU / 3 * i));
+				if (!t.slowDown)
+				{
+					double speedRatio = (t.xVel * t.xVel + t.yVel * t.yVel) / (600 * 600);
+					double amount = i == 0 ? 1 + 1 * speedRatio : 1 - 0.5 * speedRatio;
+					xPoints[i] = (int) (t.x + Tringler.radius * amount * Math.cos(t.rotation + TAU / 3 * i));
+					yPoints[i] = (int) (t.y + Tringler.radius * amount * Math.sin(t.rotation + TAU / 3 * i));
+				} else
+				{
+					xPoints[i] = (int) (t.x + Tringler.radius * Math.cos(t.rotation + TAU / 3 * i));
+					yPoints[i] = (int) (t.y + Tringler.radius * Math.sin(t.rotation + TAU / 3 * i));
+				}
 			}
 			buffer.setStroke(new BasicStroke(2));
 			buffer.setColor(Tringler.sicklyGreen);
-			if (t.slowDown)
-				buffer.setColor(Color.red);
 			buffer.fillPolygon(xPoints, yPoints, 3);
 			buffer.setColor(Tringler.radGreen);
 			buffer.drawPolygon(xPoints, yPoints, 3);
@@ -498,6 +507,11 @@ class Main extends JFrame implements KeyListener, MouseListener, MouseMotionList
 	void exitGame()
 	{
 		System.exit(0);
+	}
+
+	public static double lerpAngle(double angle, double target, double amount)
+	{
+		return angle + (((((target - angle) % (Math.PI * 2)) + (Math.PI * 3)) % (Math.PI * 2)) - Math.PI) * amount;
 	}
 
 	// IGNORE

@@ -12,7 +12,7 @@ public class Tringler
 	double				rotation;
 	double				xVel, yVel;
 	double				prevDistPow2	= 9999999;					// to know when to stop dashing
-	boolean				slowDown		= false;
+	boolean				slowDown		= true;
 
 	public Tringler(double x_, double y_)
 	{
