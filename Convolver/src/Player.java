@@ -7,12 +7,12 @@ public class Player extends Surfer
 	}
 
 	int ripple = 0;
-	double life = 100;
+	LifeRing life = new LifeRing(100);
 	double underwaterTimer =0;
 	public static int maxUnderwater =20;
 	public void damage (double d)
 	{
-		life-=d;
+		life.life-=d;
 	}
 	
 	public void holdBreath (double dt)
