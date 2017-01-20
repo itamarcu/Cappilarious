@@ -44,6 +44,9 @@ class Main extends JFrame implements KeyListener, MouseListener, MouseMotionList
 	List<Wave>					waves;
 	List<Waver>					wavers;
 	Surfer						player;
+	List<Surfer>				enemySurfers;
+	List<Tringler>				tringlers;
+	double						eventTimeLeft		= 10, eventFrequency = 10;
 
 	// Stuff that should not be touched
 	private static final long	serialVersionUID	= 1;
@@ -75,6 +78,13 @@ class Main extends JFrame implements KeyListener, MouseListener, MouseMotionList
 						player.lastWaveIndex = -1;
 					if (i < player.lastWaveIndex)
 						player.lastWaveIndex -= 1;
+					for (Surfer s : enemySurfers)
+					{
+						if (i == s.lastWaveIndex)
+							s.lastWaveIndex = -1;
+						if (i < s.lastWaveIndex)
+							s.lastWaveIndex -= 1;
+					}
 					waves.remove(i);
 					i--;
 					continue;
@@ -90,7 +100,79 @@ class Main extends JFrame implements KeyListener, MouseListener, MouseMotionList
 				waves.add(wr.generateWave());
 			}
 		}
-		moveSurfer(player, playerKeys(), deltaTime);
+		moveSurfer(player, moveByPlayerKeys(), deltaTime);
+		for (int i = 0; i < enemySurfers.size(); i++)
+		{
+			Surfer s = enemySurfers.get(i);
+			if (Math.pow(s.x - player.x, 2) + Math.pow(s.x - player.x, 2) > 1200 * 1200)
+			{
+				enemySurfers.remove(i);
+				i--;
+				continue;
+			}
+			moveSurfer(s, moveByFollowPlayer(s), deltaTime);
+		}
+		for (int i = 0; i < tringlers.size(); i++)
+		{
+			Tringler t = tringlers.get(i);
+			if (Math.pow(t.x - player.x, 2) + Math.pow(t.x - player.x, 2) > 1200 * 1200)
+			{
+				tringlers.remove(i);
+				i--;
+				continue;
+			}
+			t.chargeTimeLeft -= deltaTime;
+			if (t.chargeTimeLeft < t.chargeDelay - 1) // not dashing
+				t.rotation += deltaTime * t.chargeTimeLeft / 5 * 12; // variable rotation speed
+			t.x += t.xVel * deltaTime;
+			t.y += t.yVel * deltaTime;
+			double speedPow2 = t.xVel * t.xVel + t.yVel * t.yVel;
+			if (t.chargeTimeLeft >= t.chargeDelay - 1 && speedPow2 < 600 * 600) // dashing
+			{
+
+				t.xVel += 6 * t.xVel * deltaTime;
+				t.yVel += 6 * t.yVel * deltaTime;
+			}
+			if (t.chargeTimeLeft < t.chargeDelay - 1 && speedPow2 > 0) // un-dashing
+			{
+				double distPow2 = Math.pow(player.x - t.x, 2) + Math.pow(player.y - t.y, 2);
+				System.out.println(distPow2);
+				if (distPow2 < t.prevDistPow2)
+					t.prevDistPow2 = distPow2;
+				else if (distPow2 - 25000 > t.prevDistPow2)
+				{
+					t.slowDown = true;
+				}
+				if (t.slowDown)
+				{
+					t.xVel -= 3 * t.xVel * deltaTime;
+					t.yVel -= 3 * t.yVel * deltaTime;
+				}
+				else
+					t.chargeTimeLeft += deltaTime/2;
+			}
+			if (t.chargeTimeLeft < 0) // begin dash
+			{
+				t.chargeTimeLeft = t.chargeDelay;
+				double angle = Math.atan2(player.y - t.y, player.x - t.x);
+				t.xVel = 10 * Math.cos(angle);
+				t.yVel = 10 * Math.sin(angle);
+				t.slowDown = false;
+			}
+		}
+		eventTimeLeft -= deltaTime;
+		if (eventTimeLeft < 0)
+		{
+			eventTimeLeft = eventFrequency;
+			double ayn = Math.random();
+			if (ayn < 0.1)
+			{
+				if (enemySurfers.size() < 1) // maximum 1 enemy surfer
+					enemySurfers.add(new Surfer(0, 0, 400));
+			} else if (ayn < 1.0)
+				if (tringlers.size() < 1) // maximum 1 enemy tringler
+					tringlers.add(new Tringler(Math.random() * frameWidth - frameWidth / 2, Math.random() * frameHeight - frameHeight / 2));
+		}
 	}
 
 	// This is what you use to call draw methods or to just draw. Is called in
@@ -131,6 +213,33 @@ class Main extends JFrame implements KeyListener, MouseListener, MouseMotionList
 			buffer.drawLine((int) (wr.x), (int) (wr.y - 20), (int) (wr.x), (int) (wr.y + 20));
 			buffer.drawLine((int) (wr.x - 20), (int) (wr.y), (int) (wr.x + 20), (int) (wr.y));
 		}
+		// Surfers
+		for (Surfer s : enemySurfers)
+		{
+			buffer.setStroke(new BasicStroke(2));
+			buffer.setColor(Color.RED);
+			buffer.fillOval((int) (s.x - Surfer.radius), (int) (s.y - Surfer.radius), 2 * Surfer.radius, 2 * Surfer.radius);
+			buffer.setColor(Color.BLACK);
+			buffer.drawOval((int) (s.x - Surfer.radius), (int) (s.y - Surfer.radius), 2 * Surfer.radius, 2 * Surfer.radius);
+		}
+		// Tringlers
+		for (Tringler t : tringlers)
+		{
+			int[] xPoints = new int[3];
+			int[] yPoints = new int[3];
+			for (int i = 0; i < 3; i++)
+			{
+				xPoints[i] = (int) (t.x + Tringler.radius * Math.cos(t.rotation + TAU / 3 * i));
+				yPoints[i] = (int) (t.y + Tringler.radius * Math.sin(t.rotation + TAU / 3 * i));
+			}
+			buffer.setStroke(new BasicStroke(2));
+			buffer.setColor(Tringler.sicklyGreen);
+			if (t.slowDown)
+				buffer.setColor(Color.red);
+			buffer.fillPolygon(xPoints, yPoints, 3);
+			buffer.setColor(Tringler.radGreen);
+			buffer.drawPolygon(xPoints, yPoints, 3);
+		}
 
 		// Player
 		buffer.setStroke(new BasicStroke(2));
@@ -162,15 +271,18 @@ class Main extends JFrame implements KeyListener, MouseListener, MouseMotionList
 
 		waves = new ArrayList<Wave>();
 		wavers = new ArrayList<Waver>();
+		enemySurfers = new ArrayList<Surfer>();
+		tringlers = new ArrayList<Tringler>();
 
-		player = new Surfer(0, 0);
+		player = new Surfer(0, 0, 450);
+		tringlers.add(new Tringler(400, -200));
 
-		wavers.add(new Waver(300, 150, 100, 100, 6.0, Wave.purple));
-		wavers.add(new Waver(-300, -350, 100, 100, 6.0, Wave.purple));
-		wavers.add(new Waver(100, 550, 100, 100, 6.0, Wave.purple));
+		wavers.add(new Waver(300, 150, 60, 40, 3.0, Wave.purple));
+		wavers.add(new Waver(-300, -350, 60, 40, 3.0, Wave.purple));
+		wavers.add(new Waver(100, 550, 60, 40, 3.0, Wave.purple));
 	}
 
-	double[] playerKeys()
+	double[] moveByPlayerKeys()
 	{
 		double verticalMovement = 0, horizontalMovement = 0;
 		if (upPressed)
@@ -188,8 +300,17 @@ class Main extends JFrame implements KeyListener, MouseListener, MouseMotionList
 		{ Math.atan2(verticalMovement, horizontalMovement), 1 };
 	}
 
+	double[] moveByFollowPlayer(Surfer surfer)
+	{
+		return new double[]
+		{ Math.atan2(player.y - surfer.y, player.x - surfer.x), 1 };
+	}
+
 	void moveSurfer(Surfer surfer, double[] move, double deltaTime)
 	{
+		int numOfContainingWaves = 0;
+		double avgPushesX = 0;
+		double avgPushesY = 0;
 		for (int i = 0; i < waves.size(); i++)
 		{
 			Wave w = waves.get(i);
@@ -198,14 +319,20 @@ class Main extends JFrame implements KeyListener, MouseListener, MouseMotionList
 				surfer.lastWaveIndex = i;
 				// add velocity
 				double angle = Math.atan2(surfer.y - w.cy, surfer.x - w.cx);
-				surfer.x += deltaTime * w.speed * Math.cos(angle);
-				surfer.y += deltaTime * w.speed * Math.sin(angle);
+				avgPushesX += w.speed * Math.cos(angle);
+				avgPushesY += w.speed * Math.sin(angle);
+				numOfContainingWaves++;
 			}
+		}
+		if (numOfContainingWaves > 1)
+		{
+			surfer.x += deltaTime * avgPushesX / numOfContainingWaves;
+			surfer.y += deltaTime * avgPushesY / numOfContainingWaves;
 		}
 		surfer.xVel += move[1] * Surfer.acceleration * Math.cos(move[0]);
 		surfer.yVel += move[1] * Surfer.acceleration * Math.sin(move[0]);
 		double vel2 = surfer.xVel * surfer.xVel + surfer.yVel * surfer.yVel;
-		double ratio = Math.abs(vel2 / Surfer.maxSpeedPow2);
+		double ratio = Math.abs(vel2 / surfer.maxSpeedPow2);
 		if (ratio > 1)
 		{
 			surfer.xVel /= ratio;
@@ -218,23 +345,23 @@ class Main extends JFrame implements KeyListener, MouseListener, MouseMotionList
 
 		surfer.x += deltaTime * surfer.xVel;
 		surfer.y += deltaTime * surfer.yVel;
-
 		if (surfer.lastWaveIndex != -1)
 		{
 			Wave w = waves.get(surfer.lastWaveIndex);
 			double distFromWaveCenterPow2 = Math.pow(w.cx - surfer.x, 2) + Math.pow(w.cy - surfer.y, 2);
 			double angle = Math.atan2(surfer.y - w.cy, surfer.x - w.cx);
-			if (distFromWaveCenterPow2 < w.r1 * w.r1)
-			{
-				// teleport surfer "into" wave
-				surfer.x = w.cx + w.r1 * Math.cos(angle);
-				surfer.y = w.cy + w.r1 * Math.sin(angle);
-			} else if (distFromWaveCenterPow2 > w.r2 * w.r2)
-			{
-				// teleport surfer "into" wave
-				surfer.x = w.cx + w.r2 * Math.cos(angle);
-				surfer.y = w.cy + w.r2 * Math.sin(angle);
-			}
+			if (numOfContainingWaves == 0)
+				if (distFromWaveCenterPow2 < w.r1 * w.r1)
+				{
+					// teleport surfer "into" wave
+					surfer.x = w.cx + w.r1 * Math.cos(angle);
+					surfer.y = w.cy + w.r1 * Math.sin(angle);
+				} else if (distFromWaveCenterPow2 > w.r2 * w.r2)
+				{
+					// teleport surfer "into" wave
+					surfer.x = w.cx + w.r2 * Math.cos(angle);
+					surfer.y = w.cy + w.r2 * Math.sin(angle);
+				}
 		}
 	}
 
@@ -358,7 +485,7 @@ class Main extends JFrame implements KeyListener, MouseListener, MouseMotionList
 
 			try
 			{
-				Thread.sleep((lastLoopTime - System.nanoTime() + OPTIMAL_TIME) / 1000000);
+				Thread.sleep((Math.max(0, lastLoopTime - System.nanoTime()) + OPTIMAL_TIME) / 1000000);
 			} catch (Exception e)
 			{
 				e.printStackTrace();
