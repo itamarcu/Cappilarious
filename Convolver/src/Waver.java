@@ -26,12 +26,12 @@ public class Waver {
 		waveWidth=_waveWidth;
 		freq=_freq;
 		color=_color;
-		timeLeft=0;
+		timeLeft=freq;
 
 	}
 	public Wave generateWave ()
 	{
-		timeLeft=0;
+		timeLeft=freq;
 		Wave w= new Wave (x, y, speed, waveWidth, color);
 		return w;
 	}
