@@ -11,6 +11,7 @@ public class Waver {
 	
 	public Waver (double centerX, double centerY, double _speed, double _waveWidth, double _freq, Color _color)
 	{
+
 		x=centerX;
 		y=centerY;
 		speed=_speed;
@@ -18,6 +19,15 @@ public class Waver {
 		freq=_freq;
 		color=_color;
 		timeLeft=freq;
+
+		x=centerX;
+		y=centerY;
+		speed=_speed;
+		waveWidth=_waveWidth;
+		freq=_freq;
+		color=_color;
+		timeLeft=0;
+
 	}
 	public Wave generateWave ()
 	{
