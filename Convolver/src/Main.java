@@ -410,6 +410,7 @@ class Main extends JFrame implements KeyListener, MouseListener, MouseMotionList
 			buffer.drawPolygon(xPoints, yPoints, 4);
 
 		}
+
 		// Move camera back
 		buffer.setTransform(original);
 	}

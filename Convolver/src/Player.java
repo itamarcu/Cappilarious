@@ -2,10 +2,10 @@
 public class Player extends Surfer
 {
 	int						ripple			= 0;
-	double					life			= 100;
 	double					underwaterTimer	= 0;
 	public static double	maxUnderwater	= 2;
 	double					injureFlash		= 1;
+	LifeRing				life			= new LifeRing(100);
 
 	public Player(int x_, int y_, double maxSpeed)
 	{
@@ -15,9 +15,9 @@ public class Player extends Surfer
 
 	public void damage(double d)
 	{
-		life -= d;
 		if (injureFlash > 0.5)
 			injureFlash = 0;
+		life.life -= d;
 	}
 
 	public void holdBreath(double dt)
