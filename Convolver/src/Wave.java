@@ -5,8 +5,8 @@ public class Wave {
 	double r1, r2;
 	double width;
 	double speed;
+	public static Color purple = new Color(196, 0, 255, 80);
 	Color color;
-	public static Color pink = new Color(255, 128, 128), red = new Color(255, 0, 0);
 
 	public Wave(double originX, double originY, double _speed, double _width, Color _color) {
 		cx = originX;
@@ -14,8 +14,8 @@ public class Wave {
 		speed = _speed;
 		r1 = -_width;
 		width = _width;
-		r2 = 0;
 		color = _color;
+		r2 = 0;
 	}
 
 	public void update(double dt) {
@@ -24,7 +24,7 @@ public class Wave {
 	}
 
 	public boolean contains(double x, double y) {
-		double dist = Math.pow(x - cx, 2);
+		double dist = Math.pow(x - cx, 2) + Math.pow(y - cy, 2);
 		return dist >= Math.pow(r1, 2) && dist <= Math.pow(r2, 2);
 	}
 }

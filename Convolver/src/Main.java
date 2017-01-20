@@ -86,13 +86,10 @@ class Main extends JFrame implements KeyListener, MouseListener, MouseMotionList
 
 		buffer.drawOval(-20, -20, 40, 40);
 		// Waves
-		Composite defaultComposite = buffer.getComposite();
-		AlphaComposite a = AlphaComposite.getInstance(AlphaComposite.SRC_OVER, 0.2f);
-		buffer.setComposite(a);
 		for (int i = 0; i < waves.size(); i++) {
 			// Draw outlines
-			buffer.setColor(Wave.red);
 			Wave w = waves.get(i);
+			buffer.setColor(w.color);
 			if (w.r2 <= w.width) {
 				buffer.fillOval((int) (w.cx - w.r2), (int) (w.cy - w.r2), (int) (2 * w.r2), (int) (2 * w.r2));
 			} else {
@@ -101,7 +98,6 @@ class Main extends JFrame implements KeyListener, MouseListener, MouseMotionList
 						(int) (2 * (w.r2 - w.width / 2)), (int) (2 * (w.r2 - w.width / 2)));
 			}
 		}
-		buffer.setComposite(defaultComposite);
 
 		// Wavers
 		for (Waver wr : wavers) {
@@ -135,9 +131,9 @@ class Main extends JFrame implements KeyListener, MouseListener, MouseMotionList
 		waves = new ArrayList<Wave>();
 		wavers = new ArrayList<Waver>();
 
-		wavers.add(new Waver(300, 150, 120, 120, 2.0, Wave.pink));
-		wavers.add(new Waver(-300, -350, 120, 120, 2.0, Wave.pink));
-		wavers.add(new Waver(100, 550, 120, 120, 2.0, Wave.pink));
+		wavers.add(new Waver(300, 150, 100, 240, 9.0, Wave.purple));
+		wavers.add(new Waver(-300, -350, 100, 240, 9.0, Wave.purple));
+		wavers.add(new Waver(100, 550, 100, 240, 9.0, Wave.purple));
 	}
 
 	// Is called when you start to press a key, and then keeps being called
