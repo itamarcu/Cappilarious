@@ -69,6 +69,13 @@ class Main extends JFrame implements KeyListener, MouseListener, MouseMotionList
 	// This is where the magic happens
 	void gameFrame(double deltaTime)
 	{
+		System.out.println("count those freaks");
+		System.out.println("we're completely outnumbered");
+		System.out.println("blah blah blah blah blah blah");
+		System.out.println("and the world get's more peculiar every single day");
+		System.out.println("one two three");
+		System.out.println("it's completely asunder");
+		System.out.println("...etc...");
 		timeThatPassed += deltaTime;
 		synchronized (waves)
 		{
