@@ -43,7 +43,7 @@ class Main extends JFrame implements KeyListener, MouseListener, MouseMotionList
 
 	List<Wave>					waves;
 	List<Waver>					wavers;
-	Player						player;
+	Surfer						player;
 
 	// Stuff that should not be touched
 	private static final long	serialVersionUID	= 1;
@@ -71,6 +71,10 @@ class Main extends JFrame implements KeyListener, MouseListener, MouseMotionList
 				w.r1 += 60 * deltaTime;
 				if (w.width <= 0)
 				{
+					if (i == player.lastWaveIndex)
+						player.lastWaveIndex = -1;
+					if (i < player.lastWaveIndex)
+						player.lastWaveIndex -= 1;
 					waves.remove(i);
 					i--;
 					continue;
@@ -86,7 +90,7 @@ class Main extends JFrame implements KeyListener, MouseListener, MouseMotionList
 				waves.add(wr.generateWave());
 			}
 		}
-		movePlayer(deltaTime);
+		moveSurfer(player, playerKeys(), deltaTime);
 	}
 
 	// This is what you use to call draw methods or to just draw. Is called in
@@ -131,9 +135,9 @@ class Main extends JFrame implements KeyListener, MouseListener, MouseMotionList
 		// Player
 		buffer.setStroke(new BasicStroke(2));
 		buffer.setColor(Color.ORANGE);
-		buffer.fillOval((int) (player.x - Player.radius), (int) (player.y - Player.radius), 2 * Player.radius, 2 * Player.radius);
+		buffer.fillOval((int) (player.x - Surfer.radius), (int) (player.y - Surfer.radius), 2 * Surfer.radius, 2 * Surfer.radius);
 		buffer.setColor(Color.BLACK);
-		buffer.drawOval((int) (player.x - Player.radius), (int) (player.y - Player.radius), 2 * Player.radius, 2 * Player.radius);
+		buffer.drawOval((int) (player.x - Surfer.radius), (int) (player.y - Surfer.radius), 2 * Surfer.radius, 2 * Surfer.radius);
 
 		// Move camera back
 		buffer.setTransform(original);
@@ -159,21 +163,15 @@ class Main extends JFrame implements KeyListener, MouseListener, MouseMotionList
 		waves = new ArrayList<Wave>();
 		wavers = new ArrayList<Waver>();
 
-		player = new Player(0, 0);
+		player = new Surfer(0, 0);
 
-		wavers.add(new Waver(300, 150, 100, 240, 9.0, Wave.purple));
-		wavers.add(new Waver(-300, -350, 100, 240, 9.0, Wave.purple));
-		wavers.add(new Waver(100, 550, 100, 240, 9.0, Wave.purple));
+		wavers.add(new Waver(300, 150, 100, 100, 6.0, Wave.purple));
+		wavers.add(new Waver(-300, -350, 100, 100, 6.0, Wave.purple));
+		wavers.add(new Waver(100, 550, 100, 100, 6.0, Wave.purple));
 	}
 
-	void movePlayer(double deltaTime)
+	double[] playerKeys()
 	{
-		for (int i = 0; i < waves.size(); i++)
-		{
-			Wave w = waves.get(i);
-			if (w.contains(player.x, player.y))
-				player.lastWaveIndex = i;
-		}
 		double verticalMovement = 0, horizontalMovement = 0;
 		if (upPressed)
 			verticalMovement -= 1;
@@ -183,26 +181,61 @@ class Main extends JFrame implements KeyListener, MouseListener, MouseMotionList
 			horizontalMovement -= 1;
 		if (rightPressed)
 			horizontalMovement += 1;
-		if (horizontalMovement != 0 && verticalMovement != 0)
+		if (horizontalMovement == 0 && verticalMovement == 0)
+			return new double[]
+			{ 0, 0 };
+		return new double[]
+		{ Math.atan2(verticalMovement, horizontalMovement), 1 };
+	}
+
+	void moveSurfer(Surfer surfer, double[] move, double deltaTime)
+	{
+		for (int i = 0; i < waves.size(); i++)
 		{
-			horizontalMovement *= 0.7072;
-			verticalMovement *= 0.7072;
+			Wave w = waves.get(i);
+			if (w.contains(surfer.x, surfer.y))
+			{
+				surfer.lastWaveIndex = i;
+				// add velocity
+				double angle = Math.atan2(surfer.y - w.cy, surfer.x - w.cx);
+				surfer.x += deltaTime * w.speed * Math.cos(angle);
+				surfer.y += deltaTime * w.speed * Math.sin(angle);
+			}
 		}
-		player.xVel += Player.acceleration * horizontalMovement;
-		player.yVel += Player.acceleration * verticalMovement;
-		double vel2 = player.xVel * player.xVel + player.yVel * player.yVel;
-		double ratio = Math.abs(vel2 / Player.maxSpeedPow2);
+		surfer.xVel += move[1] * Surfer.acceleration * Math.cos(move[0]);
+		surfer.yVel += move[1] * Surfer.acceleration * Math.sin(move[0]);
+		double vel2 = surfer.xVel * surfer.xVel + surfer.yVel * surfer.yVel;
+		double ratio = Math.abs(vel2 / Surfer.maxSpeedPow2);
 		if (ratio > 1)
 		{
-			player.xVel /= ratio;
-			player.yVel /= ratio;
-		} else if (horizontalMovement == 0 && verticalMovement == 0)
+			surfer.xVel /= ratio;
+			surfer.yVel /= ratio;
+		} else if (move[1] == 0)
 		{
-			player.xVel *= 0.9;
-			player.yVel *= 0.9;
+			surfer.xVel *= 0.9;
+			surfer.yVel *= 0.9;
 		}
-		player.x += deltaTime * player.xVel;
-		player.y += deltaTime * player.yVel;
+
+		surfer.x += deltaTime * surfer.xVel;
+		surfer.y += deltaTime * surfer.yVel;
+
+		if (surfer.lastWaveIndex != -1)
+		{
+			Wave w = waves.get(surfer.lastWaveIndex);
+			double distFromWaveCenterPow2 = Math.pow(w.cx - surfer.x, 2) + Math.pow(w.cy - surfer.y, 2);
+			double angle = Math.atan2(surfer.y - w.cy, surfer.x - w.cx);
+			if (distFromWaveCenterPow2 < w.r1 * w.r1)
+			{
+				// teleport surfer "into" wave
+				surfer.x = w.cx + w.r1 * Math.cos(angle);
+				surfer.y = w.cy + w.r1 * Math.sin(angle);
+			} else if (distFromWaveCenterPow2 > w.r2 * w.r2)
+			{
+				// teleport surfer "into" wave
+				surfer.x = w.cx + w.r2 * Math.cos(angle);
+				surfer.y = w.cy + w.r2 * Math.sin(angle);
+			}
+		}
 	}
 
 	// Is called when you start to press a key, and then keeps being called
