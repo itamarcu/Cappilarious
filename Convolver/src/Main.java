@@ -1,7 +1,5 @@
-import java.awt.AlphaComposite;
 import java.awt.BasicStroke;
 import java.awt.Color;
-import java.awt.Composite;
 import java.awt.Frame;
 import java.awt.Graphics;
 import java.awt.Graphics2D;
@@ -22,7 +20,6 @@ import java.awt.event.WindowAdapter;
 import java.awt.event.WindowEvent;
 import java.awt.event.WindowFocusListener;
 import java.awt.geom.AffineTransform;
-import java.awt.image.BufferedImage;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -31,10 +28,12 @@ import javax.swing.JFrame;
 class Main extends JFrame implements KeyListener, MouseListener, MouseMotionListener, MouseWheelListener, ComponentListener, WindowFocusListener
 {
 	// Constants
-	final double				TAU					= 2 * Math.PI;
+	final double				TAU						= 2 * Math.PI;
+	final double				extraDistanceVertical	= 40;
+	final double				extraDistanceHorizontal	= 10;
 
 	// Variables
-	boolean						leftMousePressed	= false;
+	boolean						leftMousePressed		= false;
 	boolean						leftPressed, rightPressed, upPressed, downPressed;
 	Point						camera;												// Marks the CENTER of the screen to be drawn, not the top
 																					// left point
@@ -43,24 +42,30 @@ class Main extends JFrame implements KeyListener, MouseListener, MouseMotionList
 
 	List<Wave>					waves;
 	List<Waver>					wavers;
-	Surfer						player;
+	Player						player;
 	List<Surfer>				enemySurfers;
 	List<Tringler>				tringlers;
-	double						eventTimeLeft		= 10, eventFrequency = 10;
+	double						eventTimeLeft			= 10, eventFrequency = 10;
+	int							lastKeyPressed			= -1;
+	double						timeSinceLastKeyPressed	= 999;
+	boolean						dash					= false;
+	double						dashTime				= -1;
+	double						dashCooldown			= 1;
 
 	// Stuff that should not be touched
-	private static final long	serialVersionUID	= 1;
+	private static final long	serialVersionUID		= 1;
 	int							frameHeight, frameWidth;
 	PointerInfo					pin;												// Don't use this
-	Point						incorrectMousePoint	= new Point();					// Don't use that
-	int							mx					= 0;							// Mouse X coordinate relative to FRAME
-	int							my					= 0;							// Mouse Y coordinate relative to FRAME
+	Point						incorrectMousePoint		= new Point();				// Don't use that
+	int							mx						= 0;						// Mouse X coordinate relative to FRAME
+	int							my						= 0;						// Mouse Y coordinate relative to FRAME
 	int							bufferWidth;										// ignore
 	int							bufferHeight;										// ignore
 	Image						bufferImage;										// ignore, unless you want to do stuff with this
 	Graphics					bufferGraphics;										// ignore
-	boolean						test				= false;
-Color bgColor = new Color (50,150,255);
+	boolean						test					= false;
+	Color						bgColor					= new Color(50, 150, 255);
+
 	// This is where the magic happens
 	void gameFrame(double deltaTime)
 	{
@@ -71,7 +76,7 @@ Color bgColor = new Color (50,150,255);
 			{
 				Wave w = waves.get(i);
 				w.update(deltaTime);
-				if (w.r1 > Wave.maxR1)
+				if (w.r1 > w.maxR1)
 				{
 					w.width -= 60 * deltaTime;
 					w.r1 += 60 * deltaTime;
@@ -122,6 +127,49 @@ Color bgColor = new Color (50,150,255);
 				}
 			}
 		}
+
+		if (dashTime <= 0)
+		{
+			double[] direction = moveByPlayerKeys();
+			moveSurfer(player, direction, deltaTime);
+			if (dash)
+			{
+				if (direction[1] != 0)
+				{
+					player.xVel = 300 * Math.cos(direction[0]);
+					player.yVel = 300 * Math.sin(direction[0]);
+					dashTime = 0.3;
+					dash = false;
+					player.lastWaveIndex = -1;
+					player.ripple = 1;
+					dashCooldown = 1;
+				}
+			}
+		} else
+		{
+			double[] direction = moveByPlayerKeys();
+			if (dashTime > 0.2)
+			{
+
+				player.xVel += deltaTime * 8 * direction[1] * Surfer.acceleration * Math.cos(direction[0]);
+				player.yVel += deltaTime * 8 * direction[1] * Surfer.acceleration * Math.sin(direction[0]);
+			}
+			if (dashTime <= 0.1)
+			{
+				player.xVel -= deltaTime * player.xVel * 4;
+				player.yVel -= deltaTime * player.yVel * 4;
+			}
+			if (player.ripple % 3 == 0)
+				waves.add(new Wave(player.x, player.y, 70 - 2 * player.ripple, 6, Wave.purple, 30 - 1 * player.ripple));
+			player.ripple++;
+			dashTime -= deltaTime;
+			player.x += deltaTime * player.xVel;
+			player.y += deltaTime * player.yVel;
+		}
+		timeSinceLastKeyPressed += deltaTime;
+		if (dashCooldown > 0)
+			dashCooldown -= deltaTime;
+
 		for (int i = 0; i < wavers.size(); i++)
 		{
 			Waver wr = wavers.get(i);
@@ -131,7 +179,6 @@ Color bgColor = new Color (50,150,255);
 				waves.add(wr.generateWave());
 			}
 		}
-		moveSurfer(player, moveByPlayerKeys(), deltaTime);
 		for (int i = 0; i < enemySurfers.size(); i++)
 		{
 			Surfer s = enemySurfers.get(i);
@@ -143,68 +190,74 @@ Color bgColor = new Color (50,150,255);
 			}
 			moveSurfer(s, moveByFollowPlayer(s), deltaTime);
 		}
-		for (int i = 0; i < tringlers.size(); i++)
+		synchronized (tringlers)
 		{
-			Tringler t = tringlers.get(i);
-			if (Math.pow(t.x - player.x, 2) + Math.pow(t.x - player.x, 2) > 1200 * 1200)
+			for (int i = 0; i < tringlers.size(); i++)
 			{
-				tringlers.remove(i);
-				i--;
-				continue;
-			}
-			t.chargeTimeLeft -= deltaTime;
-			if (t.chargeTimeLeft < t.chargeDelay - 1.1) // not dashing
-				if (t.chargeTimeLeft > 0.9) // not dashing
-					t.rotation += deltaTime * t.chargeTimeLeft / 5 * 12; // variable rotation speed
-				else
-					t.rotation = lerpAngle(t.rotation, Math.atan2(player.y - t.y, player.x - t.x), deltaTime * 3.5);
-			t.x += t.xVel * deltaTime;
-			t.y += t.yVel * deltaTime;
-			double speedPow2 = t.xVel * t.xVel + t.yVel * t.yVel;
-			if (t.chargeTimeLeft >= t.chargeDelay - 1 && speedPow2 < 600 * 600) // dashing
-			{
-
-				t.xVel += 6 * t.xVel * deltaTime;
-				t.yVel += 6 * t.yVel * deltaTime;
-			}
-			if (t.chargeTimeLeft < t.chargeDelay - 1 && speedPow2 > 0) // un-dashing
-			{
-				double distPow2 = Math.pow(player.x - t.x, 2) + Math.pow(player.y - t.y, 2);
-				if (distPow2 < t.prevDistPow2)
-					t.prevDistPow2 = distPow2;
-				else if (distPow2 - 2500 > t.prevDistPow2)
+				Tringler t = tringlers.get(i);
+				if (Math.pow(t.x - player.x, 2) + Math.pow(t.x - player.x, 2) > 1200 * 1200)
 				{
-					t.slowDown = true;
+					tringlers.remove(i);
+					i--;
+					continue;
 				}
-				if (t.slowDown)
+				t.chargeTimeLeft -= deltaTime;
+				if (t.chargeTimeLeft < t.chargeDelay - 1.1) // not dashing
+					if (t.chargeTimeLeft > 0.9) // not dashing
+						t.rotation += deltaTime * t.chargeTimeLeft / 5 * 12; // variable rotation speed
+					else
+						t.rotation = lerpAngle(t.rotation, Math.atan2(player.y - t.y, player.x - t.x), deltaTime * 3.5);
+				t.x += t.xVel * deltaTime;
+				t.y += t.yVel * deltaTime;
+				double speedPow2 = t.xVel * t.xVel + t.yVel * t.yVel;
+				if (t.chargeTimeLeft >= t.chargeDelay - 1 && speedPow2 < 600 * 600) // dashing
 				{
-					t.xVel -= 3 * t.xVel * deltaTime;
-					t.yVel -= 3 * t.yVel * deltaTime;
-				} else
-					t.chargeTimeLeft += deltaTime;
-			}
-			if (t.chargeTimeLeft < 0) // begin dash
-			{
-				t.chargeTimeLeft = t.chargeDelay;
-				double angle = Math.atan2(player.y - t.y, player.x - t.x);
-				t.xVel = 10 * Math.cos(angle);
-				t.yVel = 10 * Math.sin(angle);
-				t.slowDown = false;
-				t.prevDistPow2 = 9999999;
+
+					t.xVel += 6 * t.xVel * deltaTime;
+					t.yVel += 6 * t.yVel * deltaTime;
+				}
+				if (t.chargeTimeLeft < t.chargeDelay - 1 && speedPow2 > 0) // un-dashing
+				{
+					double distPow2 = Math.pow(player.x - t.x, 2) + Math.pow(player.y - t.y, 2);
+					if (distPow2 < t.prevDistPow2)
+						t.prevDistPow2 = distPow2;
+					else if (distPow2 - 2500 > t.prevDistPow2)
+					{
+						t.slowDown = true;
+					}
+					if (t.slowDown)
+					{
+						t.xVel -= 3 * t.xVel * deltaTime;
+						t.yVel -= 3 * t.yVel * deltaTime;
+					} else
+						t.chargeTimeLeft += deltaTime;
+				}
+				if (t.chargeTimeLeft < 0) // begin dash
+				{
+					t.chargeTimeLeft = t.chargeDelay;
+					double angle = Math.atan2(player.y - t.y, player.x - t.x);
+					t.xVel = 10 * Math.cos(angle);
+					t.yVel = 10 * Math.sin(angle);
+					t.slowDown = false;
+					t.prevDistPow2 = 9999999;
+				}
 			}
 		}
 		eventTimeLeft -= deltaTime;
-		if (eventTimeLeft < 0)
+		synchronized (tringlers)
 		{
-			eventTimeLeft = eventFrequency;
-			double ayn = Math.random();
-			if (ayn < 0.1)
+			if (eventTimeLeft < 0)
 			{
-				if (enemySurfers.size() < 1) // maximum 1 enemy surfer
-					enemySurfers.add(new Surfer(0, 0, 300));
-			} else if (ayn < 1.0)
-				if (tringlers.size() < 6) // maximum 6 enemy tringlers
-					tringlers.add(new Tringler(Math.random() * frameWidth - frameWidth / 2, Math.random() * frameHeight - frameHeight / 2));
+				eventTimeLeft = eventFrequency;
+				double ayn = Math.random();
+				if (ayn < 0.1)
+				{
+					if (enemySurfers.size() < 1) // maximum 1 enemy surfer
+						enemySurfers.add(new Surfer(0, 0, 300));
+				} else if (ayn < 1.0)
+					if (tringlers.size() < 6) // maximum 6 enemy tringlers
+						tringlers.add(new Tringler(Math.random() * frameWidth - frameWidth / 2, Math.random() * frameHeight - frameHeight / 2));
+			}
 		}
 	}
 
@@ -259,40 +312,43 @@ Color bgColor = new Color (50,150,255);
 		for (Surfer s : enemySurfers)
 		{
 			buffer.setStroke(new BasicStroke(2));
-			buffer.setColor(Color.RED);
-			buffer.fillOval((int) (s.x - Surfer.radius), (int) (s.y - Surfer.radius), 2 * Surfer.radius, 2 * Surfer.radius);
 			buffer.setColor(Color.BLACK);
+			buffer.fillOval((int) (s.x - Surfer.radius), (int) (s.y - Surfer.radius), 2 * Surfer.radius, 2 * Surfer.radius);
+			buffer.setColor(Color.WHITE);
 			buffer.drawOval((int) (s.x - Surfer.radius), (int) (s.y - Surfer.radius), 2 * Surfer.radius, 2 * Surfer.radius);
 		}
 		// Tringlers
-		for (Tringler t : tringlers)
+		synchronized (tringlers)
 		{
-			int[] xPoints = new int[3];
-			int[] yPoints = new int[3];
-			for (int i = 0; i < 3; i++)
+			for (Tringler t : tringlers)
 			{
-				if (!t.slowDown)
+				int[] xPoints = new int[3];
+				int[] yPoints = new int[3];
+				for (int i = 0; i < 3; i++)
 				{
-					double speedRatio = (t.xVel * t.xVel + t.yVel * t.yVel) / (600 * 600);
-					double amount = i == 0 ? 1 + 1 * speedRatio : 1 - 0.5 * speedRatio;
-					xPoints[i] = (int) (t.x + Tringler.radius * amount * Math.cos(t.rotation + TAU / 3 * i));
-					yPoints[i] = (int) (t.y + Tringler.radius * amount * Math.sin(t.rotation + TAU / 3 * i));
-				} else
-				{
-					xPoints[i] = (int) (t.x + Tringler.radius * Math.cos(t.rotation + TAU / 3 * i));
-					yPoints[i] = (int) (t.y + Tringler.radius * Math.sin(t.rotation + TAU / 3 * i));
+					if (!t.slowDown)
+					{
+						double speedRatio = (t.xVel * t.xVel + t.yVel * t.yVel) / (600 * 600);
+						double amount = i == 0 ? 1 + 1 * speedRatio : 1 - 0.5 * speedRatio;
+						xPoints[i] = (int) (t.x + Tringler.radius * amount * Math.cos(t.rotation + TAU / 3 * i));
+						yPoints[i] = (int) (t.y + Tringler.radius * amount * Math.sin(t.rotation + TAU / 3 * i));
+					} else
+					{
+						xPoints[i] = (int) (t.x + Tringler.radius * Math.cos(t.rotation + TAU / 3 * i));
+						yPoints[i] = (int) (t.y + Tringler.radius * Math.sin(t.rotation + TAU / 3 * i));
+					}
 				}
+				buffer.setStroke(new BasicStroke(2));
+				buffer.setColor(Tringler.sicklyGreen);
+				buffer.fillPolygon(xPoints, yPoints, 3);
+				buffer.setColor(Tringler.radGreen);
+				buffer.drawPolygon(xPoints, yPoints, 3);
 			}
-			buffer.setStroke(new BasicStroke(2));
-			buffer.setColor(Tringler.sicklyGreen);
-			buffer.fillPolygon(xPoints, yPoints, 3);
-			buffer.setColor(Tringler.radGreen);
-			buffer.drawPolygon(xPoints, yPoints, 3);
 		}
 
 		// Player
 		buffer.setStroke(new BasicStroke(2));
-		buffer.setColor(Color.ORANGE);
+		buffer.setColor(Color.RED);
 		if (player.lastWaveIndex == -1)
 			buffer.setColor(Color.YELLOW);
 		buffer.fillOval((int) (player.x - Surfer.radius), (int) (player.y - Surfer.radius), 2 * Surfer.radius, 2 * Surfer.radius);
@@ -320,18 +376,25 @@ Color bgColor = new Color (50,150,255);
 		enemySurfers = new ArrayList<Surfer>();
 		tringlers = new ArrayList<Tringler>();
 
-		player = new Surfer(0, 0, 450);
+		player = new Player(0, 0, 450);
 		for (int i = 0; i < 5; i++)
-			tringlers.add(new Tringler(300*Math.cos(i*TAU/5), 300*Math.sin(i*TAU/5), 0.2*i));
+			tringlers.add(new Tringler(300 * Math.cos(i * TAU / 5), 300 * Math.sin(i * TAU / 5), 0.2 * i));
 
 		wavers.add(new Waver(400, 150, 60, 40, 6.0, Wave.purple));
 		wavers.add(new Waver(-400, -150, 60, 40, 6.0, Wave.purple));
 		wavers.add(new Waver(150, -400, 60, 40, 6.0, Wave.purple));
 		wavers.add(new Waver(-150, 400, 60, 40, 6.0, Wave.purple));
+		eventTimeLeft = 10;
+		dashTime = 0;
+		dashCooldown = 1;
 	}
 
 	double[] moveByPlayerKeys()
 	{
+		player.x = Math.min(player.x, frameWidth / 2 - extraDistanceHorizontal);
+		player.y = Math.min(player.y, frameHeight / 2 - extraDistanceVertical + 20); // sorry
+		player.x = Math.max(player.x, -frameWidth / 2 + extraDistanceHorizontal);
+		player.y = Math.max(player.y, -frameHeight / 2 + extraDistanceVertical);
 		double verticalMovement = 0, horizontalMovement = 0;
 		if (upPressed)
 			verticalMovement -= 1;
@@ -362,7 +425,7 @@ Color bgColor = new Color (50,150,255);
 		for (int i = 0; i < waves.size(); i++)
 		{
 			Wave w = waves.get(i);
-			if (w.contains(surfer.x, surfer.y))
+			if (w.surfable && w.contains(surfer.x, surfer.y))
 			{
 				surfer.lastWaveIndex = i;
 				// add velocity
@@ -415,8 +478,15 @@ Color bgColor = new Color (50,150,255);
 
 	// Is called when you start to press a key, and then keeps being called
 	// until you stop pressing the key
+
 	public void keyPressed(final KeyEvent e)
 	{
+		if (lastKeyPressed != e.getKeyCode())
+		{
+			lastKeyPressed = e.getKeyCode();
+			timeSinceLastKeyPressed = 0;
+		} else if (dashCooldown <= 0 && timeSinceLastKeyPressed <= 0.4)
+			dash = true;
 		switch (e.getKeyCode())
 		{
 		case KeyEvent.VK_R:// Restart
@@ -450,6 +520,8 @@ Color bgColor = new Color (50,150,255);
 	// Is called when you stop pressing a key
 	public void keyReleased(final KeyEvent e)
 	{
+		if (timeSinceLastKeyPressed > 0.3)
+			lastKeyPressed = -1;
 		switch (e.getKeyCode())
 		{
 		case KeyEvent.VK_LEFT:

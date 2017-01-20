@@ -11,9 +11,10 @@ public class Wave
 	double					speed;
 	public static Color		purple				= new Color(0, 50, 50, 150);
 	public static Color		infestation			= new Color(0, 100, 0, 250);
-	public static int		maxR1				= 1000;
+	public double			maxR1				= 1400;
 	public static double	intesificationRate	= 0.1;
 	Color					color;
+	boolean					surfable			= true;
 
 	public Wave(double originX, double originY, double _speed, double _width, Color _color)
 	{
@@ -25,6 +26,16 @@ public class Wave
 		width = _width;
 		color = _color;
 		r2 = 0;
+	}
+
+	/**
+	 * not surfable!
+	 */
+	public Wave(double originX, double originY, double _speed, double _width, Color _color, double maxRadius)
+	{
+		this(originX, originY, _speed, _width, _color);
+		maxR1 = maxRadius;
+		surfable = false;
 	}
 
 	public void update(double dt)
@@ -61,20 +72,20 @@ public class Wave
 			return new double[]
 			{ -1, -1 };
 
-			double a = (Math.pow(avgRad1, 2) - Math.pow(avgRad2, 2) + Math.pow(d, 2)) / (2 * d);
-			double h = Math.sqrt(Math.pow(avgRad1, 2) - Math.pow(a, 2));
-			double x1 = w.cx + (cx-w.cx)*(a/h)+ h* (cy - w.cy) / d;
-			double x2 = w.cx + (cx-w.cx)*(a/h)- h* (cy - w.cy) / d;
-			double y1 = w.cy + (cy-w.cy)*(a/h)- h* (cx - w.cx) / d;
-			double y2 = w.cy + (cy-w.cy)*(a/h)+ h* (cx - w.cx) / d;
-			double ang1 = Math.atan2(cy - y1, cx - x1) + 2*Math.PI;
-			double ang2 = Math.atan2(cy - y2, cx - x2) + 2*Math.PI;
-			results = new double[]
-			{ ang1, ang2 };
-//			System.out.println("cx="+cx+", cy="+cy+", w.cx="+w.cx+", w.c="+w.cy+", r="+avgRad2+", w.r="+avgRad1);
-//			System.out.println("d="+d+", a="+a+", h="+h+", x1="+x1+", y1="+y1+", x2="+x2+", y2="+y2+"");
-//			System.out.println(results[0]+ " " +results[1]);
-//			System.out.println();
+		double a = (Math.pow(avgRad1, 2) - Math.pow(avgRad2, 2) + Math.pow(d, 2)) / (2 * d);
+		double h = Math.sqrt(Math.pow(avgRad1, 2) - Math.pow(a, 2));
+		double x1 = w.cx + (cx - w.cx) * (a / h) + h * (cy - w.cy) / d;
+		double x2 = w.cx + (cx - w.cx) * (a / h) - h * (cy - w.cy) / d;
+		double y1 = w.cy + (cy - w.cy) * (a / h) - h * (cx - w.cx) / d;
+		double y2 = w.cy + (cy - w.cy) * (a / h) + h * (cx - w.cx) / d;
+		double ang1 = Math.atan2(cy - y1, cx - x1) + 2 * Math.PI;
+		double ang2 = Math.atan2(cy - y2, cx - x2) + 2 * Math.PI;
+		results = new double[]
+		{ ang1, ang2 };
+		// System.out.println("cx="+cx+", cy="+cy+", w.cx="+w.cx+", w.c="+w.cy+", r="+avgRad2+", w.r="+avgRad1);
+		// System.out.println("d="+d+", a="+a+", h="+h+", x1="+x1+", y1="+y1+", x2="+x2+", y2="+y2+"");
+		// System.out.println(results[0]+ " " +results[1]);
+		// System.out.println();
 		return results;
 	}
 
