@@ -9,14 +9,14 @@ public class Waver {
 	Color color;
 	
 	
-	public Waver (double centerX, double centerY, double speed, double waveWidth, double freq, Color color)
+	public Waver (double centerX, double centerY, double _speed, double _waveWidth, double _freq, Color _color)
 	{
 		cx=centerX;
 		cy=centerY;
-		this.speed=speed;
-		this.waveWidth=waveWidth;
-		this.freq=freq;
-		this.color=color;
+		speed=_speed;
+		waveWidth=_waveWidth;
+		freq=_freq;
+		color=_color;
 		timeSinceLastWave=0;
 	}
 	public Wave generateWave ()
