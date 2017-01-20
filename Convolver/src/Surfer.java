@@ -1,6 +1,6 @@
 
 public class Surfer {
-	public static int radius = 10; //for drawing only
+	public static int radius = 6; //for drawing only
 	public double maxSpeedPow2;
 	public static double acceleration = 1000;
 	double x;

@@ -3,8 +3,8 @@ import java.awt.Color;
 public class Tringler
 {
 	public static int	radius			= 24;
-	public static Color	radGreen		= new Color(100, 255, 100);
-	public static Color	sicklyGreen		= new Color(100, 255, 0);
+	public static Color	radGreen		= new Color(20, 128, 20);
+	public static Color	sicklyGreen		= new Color(180, 255, 0);
 	double				x;
 	double				y;
 	double				chargeTimeLeft;
@@ -17,10 +17,15 @@ public class Tringler
 	public Tringler(double x_, double y_)
 	{
 		x = x_;
-		x = y_;
+		y = y_;
 		chargeTimeLeft = 5;
 		rotation = 0;
 		xVel = 0;
 		yVel = 0;
+	}
+	public Tringler(double x_, double y_, double phase)
+	{
+		this(x_,y_);
+		chargeTimeLeft = chargeDelay*phase;
 	}
 }

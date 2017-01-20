@@ -59,67 +59,69 @@ class Main extends JFrame implements KeyListener, MouseListener, MouseMotionList
 	int							bufferHeight;										// ignore
 	Image						bufferImage;										// ignore, unless you want to do stuff with this
 	Graphics					bufferGraphics;										// ignore
-boolean test=false;
+	boolean						test				= false;
+
 	// This is where the magic happens
 	void gameFrame(double deltaTime)
 	{
 		timeThatPassed += deltaTime;
-		synchronized(waves)
+		synchronized (waves)
 		{
-		for (int i = 0; i < waves.size(); i++)
-		{
-			Wave w = waves.get(i);
-			w.update(deltaTime);
-			if (w.r1 > Wave.maxR1)
+			for (int i = 0; i < waves.size(); i++)
 			{
-				w.width -= 60 * deltaTime;
-				w.r1 += 60 * deltaTime;
-				if (w.width <= 0)
+				Wave w = waves.get(i);
+				w.update(deltaTime);
+				if (w.r1 > Wave.maxR1)
 				{
-					if (i == player.lastWaveIndex)
-						player.lastWaveIndex = -1;
-					if (i < player.lastWaveIndex)
-						player.lastWaveIndex -= 1;
-					for (Surfer s : enemySurfers)
+					w.width -= 60 * deltaTime;
+					w.r1 += 60 * deltaTime;
+					if (w.width <= 0)
 					{
-						if (i == s.lastWaveIndex)
-							s.lastWaveIndex = -1;
-						if (i < s.lastWaveIndex)
-							s.lastWaveIndex -= 1;
-					}
-					waves.remove(i);
-					i--;
-					continue;
-				}
-			}
-			if(test)
-			{
-				test=false;
-				w.infest(Math.random()*TAU);
-			}
-			if (w.infested)
-			{
-				//System.out.println("123");
-				w.intensify(deltaTime);
-				for (int j=i+1; j<waves.size(); j++)
-				{
-					Wave w2=  waves.get(j);
-					if (!w2.infested)
-					{
-					double[] angles=w.intersectionAngles(w2);
-					if (angles[0]!=-1)
-					{
-						player.x = w.cx + w.r1*Math.cos(angles[0]);
-						player.y = w.cy + w.r1*Math.sin(angles[0]);
-						if (w.inInfectionRange(angles[0]))
-							w2.infest(angles[0]);
-						else if (w.inInfectionRange(angles[1]))
-						w2.infest(angles[1]);
-					}
+						if (i == player.lastWaveIndex)
+							player.lastWaveIndex = -1;
+						if (i < player.lastWaveIndex)
+							player.lastWaveIndex -= 1;
+						for (Surfer s : enemySurfers)
+						{
+							if (i == s.lastWaveIndex)
+								s.lastWaveIndex = -1;
+							if (i < s.lastWaveIndex)
+								s.lastWaveIndex -= 1;
+						}
+						waves.remove(i);
+						i--;
+						continue;
 					}
 				}
+				if (test)
+				{
+					test = false;
+					w.infest(Math.random() * TAU);
+				}
+				if (w.infested)
+				{
+					// System.out.println("123");
+					w.intensify(deltaTime);
+					for (int j = i + 1; j < waves.size(); j++)
+					{
+						Wave w2 = waves.get(j);
+						if (!w2.infested)
+						{
+							double[] angles = w.intersectionAngles(w2);
+							if (angles[0] != -1)
+							{
+								player.x = w.cx + w.r1 * Math.cos(angles[0]);
+								player.y = w.cy + w.r1 * Math.sin(angles[0]);
+								if (w.inInfectionRange(angles[0]))
+									w2.infest(angles[0]);
+								else if (w.inInfectionRange(angles[1]))
+									w2.infest(angles[1]);
+							}
+						}
+					}
+				}
 			}
-		}}
+		}
 		for (int i = 0; i < wavers.size(); i++)
 		{
 			Waver wr = wavers.get(i);
@@ -199,9 +201,9 @@ boolean test=false;
 			if (ayn < 0.1)
 			{
 				if (enemySurfers.size() < 1) // maximum 1 enemy surfer
-					enemySurfers.add(new Surfer(0, 0, 400));
+					enemySurfers.add(new Surfer(0, 0, 300));
 			} else if (ayn < 1.0)
-				if (tringlers.size() < 1) // maximum 1 enemy tringler
+				if (tringlers.size() < 6) // maximum 6 enemy tringlers
 					tringlers.add(new Tringler(Math.random() * frameWidth - frameWidth / 2, Math.random() * frameHeight - frameHeight / 2));
 		}
 	}
@@ -220,27 +222,29 @@ boolean test=false;
 		// Draw stuff
 
 		// Waves
-		synchronized(waves){
-		for (int i = 0; i < waves.size(); i++)
+		synchronized (waves)
 		{
-			// Draw outlines
-			Wave w = waves.get(i);
-			buffer.setColor(w.color);
-			if (w.r2 <= w.width)
+			for (int i = 0; i < waves.size(); i++)
 			{
-				buffer.fillOval((int) (w.cx - w.r2), (int) (w.cy - w.r2), (int) (2 * w.r2), (int) (2 * w.r2));
-			} else
-			{
-				buffer.setStroke(new BasicStroke((int) (w.width)));
-				buffer.drawOval((int) (w.cx - w.r2 + w.width / 2), (int) (w.cy - w.r2 + w.width / 2), (int) (2 * (w.r2 - w.width / 2)), (int) (2 * (w.r2 - w.width / 2)));
-				if (w.infested)
+				// Draw outlines
+				Wave w = waves.get(i);
+				buffer.setColor(w.color);
+				if (w.r2 <= w.width)
 				{
-				buffer.setColor(Wave.infestation);
-				buffer.setStroke(new BasicStroke((int) (w.width)));
-				buffer.drawArc((int) (w.cx - w.r2 + w.width / 2), (int) (w.cy - w.r2 + w.width / 2), (int) (2 * (w.r2 - w.width / 2)), (int) (2 * (w.r2 - w.width / 2)),(int) (w.plagueStart*180/Math.PI),(int) ((w.plagueEnd-w.plagueStart)*180/Math.PI));
+					buffer.fillOval((int) (w.cx - w.r2), (int) (w.cy - w.r2), (int) (2 * w.r2), (int) (2 * w.r2));
+				} else
+				{
+					buffer.setStroke(new BasicStroke((int) (w.width)));
+					buffer.drawOval((int) (w.cx - w.r2 + w.width / 2), (int) (w.cy - w.r2 + w.width / 2), (int) (2 * (w.r2 - w.width / 2)), (int) (2 * (w.r2 - w.width / 2)));
+					if (w.infested)
+					{
+						buffer.setColor(Wave.infestation);
+						buffer.setStroke(new BasicStroke((int) (w.width)));
+						buffer.drawArc((int) (w.cx - w.r2 + w.width / 2), (int) (w.cy - w.r2 + w.width / 2), (int) (2 * (w.r2 - w.width / 2)), (int) (2 * (w.r2 - w.width / 2)),
+								(int) (w.plagueStart * 180 / Math.PI), (int) ((w.plagueEnd - w.plagueStart) * 180 / Math.PI));
+					}
 				}
 			}
-		}
 		}
 		// Wavers
 		for (Waver wr : wavers)
@@ -289,24 +293,20 @@ boolean test=false;
 		// Player
 		buffer.setStroke(new BasicStroke(2));
 		buffer.setColor(Color.ORANGE);
+		if (player.lastWaveIndex == -1)
+			buffer.setColor(Color.YELLOW);
 		buffer.fillOval((int) (player.x - Surfer.radius), (int) (player.y - Surfer.radius), 2 * Surfer.radius, 2 * Surfer.radius);
 		buffer.setColor(Color.BLACK);
 		buffer.drawOval((int) (player.x - Surfer.radius), (int) (player.y - Surfer.radius), 2 * Surfer.radius, 2 * Surfer.radius);
 
 		// Move camera back
 		buffer.setTransform(original);
-
-		// More example code
-		buffer.drawImage(Resources.exampleImage, -55, -55, null);
-		buffer.rotate(-TAU / 4, frameWidth - 90, frameHeight * 4 / 5 + 300 / 2);
-		buffer.drawImage(Resources.exampleImage2, frameWidth - 45, frameHeight * 4 / 5 + 300 / 2, null);
-		buffer.rotate(TAU / 4, frameWidth - 90, frameHeight * 4 / 5 + 300 / 2);
 	}
 
 	// Setup of everything! Put stuff in here, not in Main()!
 	void restart()
 	{
-		test=false;
+		test = false;
 		camera = new Point(0, 0);
 		leftMousePressed = false;
 		leftPressed = false;
@@ -321,10 +321,13 @@ boolean test=false;
 		tringlers = new ArrayList<Tringler>();
 
 		player = new Surfer(0, 0, 450);
-		tringlers.add(new Tringler(400, -200));
+		for (int i = 0; i < 5; i++)
+			tringlers.add(new Tringler(300*Math.cos(i*TAU/5), 300*Math.sin(i*TAU/5), 0.2*i));
 
-		wavers.add(new Waver(300, 150, 60, 40, 6.0, Wave.purple));
-		wavers.add(new Waver(-300, -50, 60, 40, 6.0, Wave.purple));
+		wavers.add(new Waver(400, 150, 60, 40, 6.0, Wave.purple));
+		wavers.add(new Waver(-400, -150, 60, 40, 6.0, Wave.purple));
+		wavers.add(new Waver(150, -400, 60, 40, 6.0, Wave.purple));
+		wavers.add(new Waver(-150, 400, 60, 40, 6.0, Wave.purple));
 	}
 
 	double[] moveByPlayerKeys()
