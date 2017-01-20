@@ -9,7 +9,7 @@ public class Wave
 	double					plagueEnd;
 	double					width;
 	double					speed;
-	public static Color		purple				= new Color(196, 0, 255, 80);
+	public static Color		purple				= new Color(0, 50, 50, 150);
 	public static Color		infestation			= new Color(0, 100, 0, 250);
 	public static int		maxR1				= 1000;
 	public static double	intesificationRate	= 0.1;

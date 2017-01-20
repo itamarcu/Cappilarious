@@ -60,7 +60,7 @@ class Main extends JFrame implements KeyListener, MouseListener, MouseMotionList
 	Image						bufferImage;										// ignore, unless you want to do stuff with this
 	Graphics					bufferGraphics;										// ignore
 	boolean						test				= false;
-
+Color bgColor = new Color (50,150,255);
 	// This is where the magic happens
 	void gameFrame(double deltaTime)
 	{
@@ -594,7 +594,8 @@ class Main extends JFrame implements KeyListener, MouseListener, MouseMotionList
 		if (bufferGraphics != null)
 		{
 			// this clears the offscreen image, not the onscreen one
-			bufferGraphics.clearRect(0, 0, bufferWidth, bufferHeight);
+			bufferGraphics.setColor(bgColor);
+			bufferGraphics.fillRect(0, 0, bufferWidth, bufferHeight);
 
 			// calls the paintbuffer method with buffergraphics
 			paintBuffer(bufferGraphics);
