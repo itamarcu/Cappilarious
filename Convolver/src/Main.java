@@ -59,7 +59,7 @@ class Main extends JFrame implements KeyListener, MouseListener, MouseMotionList
 	int							bufferHeight;										// ignore
 	Image						bufferImage;										// ignore, unless you want to do stuff with this
 	Graphics					bufferGraphics;										// ignore
-
+boolean test=true;
 	// This is where the magic happens
 	void gameFrame(double deltaTime)
 	{
@@ -88,6 +88,28 @@ class Main extends JFrame implements KeyListener, MouseListener, MouseMotionList
 					waves.remove(i);
 					i--;
 					continue;
+				}
+			}
+			if(test)
+			{
+				test=false;
+				w.infest(Math.random()*TAU);
+			}
+			if (w.infested)
+			{
+				//System.out.println("123");
+				w.intensify(deltaTime);
+				for (int j=i; j<waves.size(); j++)
+				{
+					Wave w2=  waves.get(j);
+					double[] angles=w.intersectionAngles(w2);
+					if (angles[0]!=-1)
+					{
+						if (angles[0]>w.plagueStart&&angles[0]>w.plagueEnd)
+							w2.infest(angles[0]);
+						else if (angles[1]>w.plagueStart&&angles[1]>w.plagueEnd)
+						w2.infest(angles[1]);
+					}
 				}
 			}
 		}
@@ -203,6 +225,12 @@ class Main extends JFrame implements KeyListener, MouseListener, MouseMotionList
 			{
 				buffer.setStroke(new BasicStroke((int) (w.width)));
 				buffer.drawOval((int) (w.cx - w.r2 + w.width / 2), (int) (w.cy - w.r2 + w.width / 2), (int) (2 * (w.r2 - w.width / 2)), (int) (2 * (w.r2 - w.width / 2)));
+				if (w.infested)
+				{
+				buffer.setColor(Wave.infestation);
+				buffer.setStroke(new BasicStroke((int) (w.width)));
+				buffer.drawArc((int) (w.cx - w.r2 + w.width / 2), (int) (w.cy - w.r2 + w.width / 2), (int) (2 * (w.r2 - w.width / 2)), (int) (2 * (w.r2 - w.width / 2)),(int) (w.plagueStart*180/Math.PI),(int) ((w.plagueEnd-w.plagueStart)*180/Math.PI));
+				}
 			}
 		}
 
