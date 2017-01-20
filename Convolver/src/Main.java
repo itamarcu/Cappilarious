@@ -1,5 +1,7 @@
+import java.awt.AlphaComposite;
 import java.awt.BasicStroke;
 import java.awt.Color;
+import java.awt.Composite;
 import java.awt.Frame;
 import java.awt.Graphics;
 import java.awt.Graphics2D;
@@ -20,6 +22,7 @@ import java.awt.event.WindowAdapter;
 import java.awt.event.WindowEvent;
 import java.awt.event.WindowFocusListener;
 import java.awt.geom.AffineTransform;
+import java.awt.image.BufferedImage;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -63,8 +66,7 @@ class Main extends JFrame implements KeyListener, MouseListener, MouseMotionList
 		for (int i = 0; i < wavers.size(); i++) {
 			Waver wr = wavers.get(i);
 			wr.update(deltaTime);
-			if (wr.timeLeft <= 0)
-			{
+			if (wr.timeLeft <= 0) {
 				waves.add(wr.generateWave());
 			}
 		}
@@ -84,21 +86,30 @@ class Main extends JFrame implements KeyListener, MouseListener, MouseMotionList
 
 		buffer.drawOval(-20, -20, 40, 40);
 		// Waves
-		for (Wave w : waves) {
+		Composite defaultComposite = buffer.getComposite();
+		AlphaComposite a = AlphaComposite.getInstance(AlphaComposite.SRC_OVER, 0.2f);
+		buffer.setComposite(a);
+		for (int i = 0; i < waves.size(); i++) {
 			// Draw outlines
-			buffer.setStroke(new BasicStroke(2));
-			buffer.setColor(Wave.pink);
-			buffer.drawOval((int) (w.cx - w.r2), (int) (w.cy - w.r2), (int) (2 * w.r2), (int) (2 * w.r2));
-			buffer.drawOval((int) (w.cx - w.r1), (int) (w.cy - w.r1), (int) (2 * w.r1), (int) (2 * w.r1));
+			buffer.setColor(Wave.red);
+			Wave w = waves.get(i);
+			if (w.r2 <= w.width) {
+				buffer.fillOval((int) (w.cx - w.r2), (int) (w.cy - w.r2), (int) (2 * w.r2), (int) (2 * w.r2));
+			} else {
+				buffer.setStroke(new BasicStroke((int) (w.width)));
+				buffer.drawOval((int) (w.cx - w.r2 + w.width / 2), (int) (w.cy - w.r2 + w.width / 2),
+						(int) (2 * (w.r2 - w.width / 2)), (int) (2 * (w.r2 - w.width / 2)));
+			}
 		}
+		buffer.setComposite(defaultComposite);
 
 		// Wavers
 		for (Waver wr : wavers) {
 			// Draw plus sign
 			buffer.setStroke(new BasicStroke(2));
-			buffer.setColor(Color.red);
-			buffer.drawLine((int)(wr.x),(int)(wr.y-20),(int)(wr.x),(int)(wr.y+20));
-			buffer.drawLine((int)(wr.x-20),(int)(wr.y),(int)(wr.x+20),(int)(wr.y));
+			buffer.setColor(new Color(255 - (int) (255 * wr.timeLeft / wr.freq), 0, 0));
+			buffer.drawLine((int) (wr.x), (int) (wr.y - 20), (int) (wr.x), (int) (wr.y + 20));
+			buffer.drawLine((int) (wr.x - 20), (int) (wr.y), (int) (wr.x + 20), (int) (wr.y));
 		}
 
 		// Move camera back
@@ -124,9 +135,9 @@ class Main extends JFrame implements KeyListener, MouseListener, MouseMotionList
 		waves = new ArrayList<Wave>();
 		wavers = new ArrayList<Waver>();
 
-		wavers.add(new Waver(300, 150, 120, 120, 1.0, Wave.pink));
-		wavers.add(new Waver(-300, -350, 120, 120, 1.0, Wave.pink));
-		wavers.add(new Waver(100, 550, 120, 120, 1.0, Wave.pink));
+		wavers.add(new Waver(300, 150, 120, 120, 2.0, Wave.pink));
+		wavers.add(new Waver(-300, -350, 120, 120, 2.0, Wave.pink));
+		wavers.add(new Waver(100, 550, 120, 120, 2.0, Wave.pink));
 	}
 
 	// Is called when you start to press a key, and then keeps being called
