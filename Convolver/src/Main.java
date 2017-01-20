@@ -59,11 +59,13 @@ class Main extends JFrame implements KeyListener, MouseListener, MouseMotionList
 	int							bufferHeight;										// ignore
 	Image						bufferImage;										// ignore, unless you want to do stuff with this
 	Graphics					bufferGraphics;										// ignore
-boolean test=true;
+boolean test=false;
 	// This is where the magic happens
 	void gameFrame(double deltaTime)
 	{
 		timeThatPassed += deltaTime;
+		synchronized(waves)
+		{
 		for (int i = 0; i < waves.size(); i++)
 		{
 			Wave w = waves.get(i);
@@ -99,20 +101,25 @@ boolean test=true;
 			{
 				//System.out.println("123");
 				w.intensify(deltaTime);
-				for (int j=i; j<waves.size(); j++)
+				for (int j=i+1; j<waves.size(); j++)
 				{
 					Wave w2=  waves.get(j);
+					if (!w2.infested)
+					{
 					double[] angles=w.intersectionAngles(w2);
 					if (angles[0]!=-1)
 					{
-						if (angles[0]>w.plagueStart&&angles[0]>w.plagueEnd)
+						player.x = w.cx + w.r1*Math.cos(angles[0]);
+						player.y = w.cy + w.r1*Math.sin(angles[0]);
+						if (w.inInfectionRange(angles[0]))
 							w2.infest(angles[0]);
-						else if (angles[1]>w.plagueStart&&angles[1]>w.plagueEnd)
+						else if (w.inInfectionRange(angles[1]))
 						w2.infest(angles[1]);
+					}
 					}
 				}
 			}
-		}
+		}}
 		for (int i = 0; i < wavers.size(); i++)
 		{
 			Waver wr = wavers.get(i);
@@ -213,6 +220,7 @@ boolean test=true;
 		// Draw stuff
 
 		// Waves
+		synchronized(waves){
 		for (int i = 0; i < waves.size(); i++)
 		{
 			// Draw outlines
@@ -233,7 +241,7 @@ boolean test=true;
 				}
 			}
 		}
-
+		}
 		// Wavers
 		for (Waver wr : wavers)
 		{
@@ -298,6 +306,7 @@ boolean test=true;
 	// Setup of everything! Put stuff in here, not in Main()!
 	void restart()
 	{
+		test=false;
 		camera = new Point(0, 0);
 		leftMousePressed = false;
 		leftPressed = false;
@@ -314,9 +323,8 @@ boolean test=true;
 		player = new Surfer(0, 0, 450);
 		tringlers.add(new Tringler(400, -200));
 
-		wavers.add(new Waver(300, 150, 60, 40, 3.0, Wave.purple));
-		wavers.add(new Waver(-300, -350, 60, 40, 3.0, Wave.purple));
-		wavers.add(new Waver(100, 550, 60, 40, 3.0, Wave.purple));
+		wavers.add(new Waver(300, 150, 60, 40, 6.0, Wave.purple));
+		wavers.add(new Waver(-300, -50, 60, 40, 6.0, Wave.purple));
 	}
 
 	double[] moveByPlayerKeys()
