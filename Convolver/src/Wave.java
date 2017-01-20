@@ -71,10 +71,10 @@ public class Wave
 			double ang2 = Math.atan2(cy - y2, cx - x2) + 2*Math.PI;
 			results = new double[]
 			{ ang1, ang2 };
-			System.out.println("cx="+cx+", cy="+cy+", w.cx="+w.cx+", w.c="+w.cy+", r="+avgRad2+", w.r="+avgRad1);
-			System.out.println("d="+d+", a="+a+", h="+h+", x1="+x1+", y1="+y1+", x2="+x2+", y2="+y2+"");
-			System.out.println(results[0]+ " " +results[1]);
-			System.out.println();
+//			System.out.println("cx="+cx+", cy="+cy+", w.cx="+w.cx+", w.c="+w.cy+", r="+avgRad2+", w.r="+avgRad1);
+//			System.out.println("d="+d+", a="+a+", h="+h+", x1="+x1+", y1="+y1+", x2="+x2+", y2="+y2+"");
+//			System.out.println(results[0]+ " " +results[1]);
+//			System.out.println();
 		return results;
 	}
 
