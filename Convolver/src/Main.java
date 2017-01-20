@@ -45,7 +45,7 @@ class Main extends JFrame implements KeyListener, MouseListener, MouseMotionList
 	Player						player;
 	List<Surfer>				enemySurfers;
 	List<Tringler>				tringlers;
-	double						eventTimeLeft			= 10, eventFrequency = 10;
+	double						eventTimeLeft			= 10, eventFrequency = 7;
 	int							lastKeyPressed			= -1;
 	double						timeSinceLastKeyPressed	= 999;
 	boolean						dash					= false;
@@ -69,13 +69,6 @@ class Main extends JFrame implements KeyListener, MouseListener, MouseMotionList
 	// This is where the magic happens
 	void gameFrame(double deltaTime)
 	{
-		System.out.println("count those freaks");
-		System.out.println("we're completely outnumbered");
-		System.out.println("blah blah blah blah blah blah");
-		System.out.println("and the world get's more peculiar every single day");
-		System.out.println("one two three");
-		System.out.println("it's completely asunder");
-		System.out.println("...etc...");
 		timeThatPassed += deltaTime;
 		synchronized (waves)
 		{
@@ -147,6 +140,7 @@ class Main extends JFrame implements KeyListener, MouseListener, MouseMotionList
 					player.yVel = 200 * Math.sin(direction[0]);
 					dashTime = 0.3;
 					dash = false;
+					player.shielded = true;
 					player.lastWaveIndex = -1;
 					player.ripple = 1;
 					dashCooldown = 1;
@@ -173,6 +167,14 @@ class Main extends JFrame implements KeyListener, MouseListener, MouseMotionList
 			player.x += deltaTime * player.xVel;
 			player.y += deltaTime * player.yVel;
 		}
+		if (player.lastWaveIndex == -1)
+			player.holdBreath(deltaTime);
+		else if (player.underwaterTimer > 0)
+			player.underwaterTimer -= deltaTime * 3;
+		if (player.underwaterTimer < 0)
+			player.underwaterTimer = 0;
+		if (player.injureFlash < 1)
+			player.injureFlash += deltaTime;
 		timeSinceLastKeyPressed += deltaTime;
 		if (dashCooldown > 0)
 			dashCooldown -= deltaTime;
@@ -380,25 +382,14 @@ class Main extends JFrame implements KeyListener, MouseListener, MouseMotionList
 		// Player
 		if (dashTime <= 0)
 		{
-			if (player.shielded)
-			{
-				buffer.setColor(Color.ORANGE);
-				if (player.lastWaveIndex == -1)
-					buffer.setColor(Color.RED);
-				buffer.fillOval((int) (player.x - player.radius), (int) (player.y - player.radius), 2 * player.radius, 2 * player.radius);
-				buffer.setColor(Color.WHITE);
-				buffer.drawOval((int) (player.x - player.radius), (int) (player.y - player.radius), 2 * player.radius, 2 * player.radius);
-			} else
-			{
-				buffer.setColor(Color.YELLOW);
-				if (player.lastWaveIndex == -1)
-					buffer.setColor(Color.RED);
-				buffer.fillOval((int) (player.x - player.radius), (int) (player.y - player.radius), 2 * player.radius, 2 * player.radius);
-				buffer.setStroke(new BasicStroke(2));
-				buffer.setColor(Color.BLACK);
-				buffer.drawOval((int) (player.x - player.radius), (int) (player.y - player.radius), 2 * player.radius, 2 * player.radius);
+			double choking = player.underwaterTimer / Player.maxUnderwater;
+			buffer.setColor(new Color(255, 200, (int) (200 * choking)));
+			if (player.injureFlash <= 0.15)
+				buffer.setColor(Color.RED);
+			buffer.fillOval((int) (player.x - player.radius), (int) (player.y - player.radius), 2 * player.radius, 2 * player.radius);
+			buffer.setColor(Color.BLACK);
+			buffer.drawOval((int) (player.x - player.radius), (int) (player.y - player.radius), 2 * player.radius, 2 * player.radius);
 
-			}
 		} else
 		{
 			// dashing diamond
@@ -413,22 +404,12 @@ class Main extends JFrame implements KeyListener, MouseListener, MouseMotionList
 				yPoints[i] = (int) (player.y + player.radius * amount * Math.sin(rotation + TAU / 4 * i));
 			}
 			buffer.setStroke(new BasicStroke(3));
-			if (player.shielded)
-			{
-				buffer.setColor(Color.ORANGE);
-				buffer.fillPolygon(xPoints, yPoints, 4);
-				buffer.setColor(Color.MAGENTA);
-				buffer.drawPolygon(xPoints, yPoints, 4);
-			} else
-			{
-				buffer.setColor(Color.YELLOW);
-				buffer.fillPolygon(xPoints, yPoints, 4);
-				buffer.setColor(Color.BLACK);
-				buffer.drawPolygon(xPoints, yPoints, 4);
-			}
+			buffer.setColor(Color.YELLOW);
+			buffer.fillPolygon(xPoints, yPoints, 4);
+			buffer.setColor(Color.MAGENTA);
+			buffer.drawPolygon(xPoints, yPoints, 4);
+
 		}
-		//UI
-		buffer.fillRect(10, 10, 300, 300);
 		// Move camera back
 		buffer.setTransform(original);
 	}
