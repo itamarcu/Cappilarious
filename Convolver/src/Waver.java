@@ -5,7 +5,7 @@ public class Waver {
 	double speed;
 	double waveWidth;
 	double freq;
-	double timeSinceLastWave;
+	double timeLeft;
 	Color color;
 	
 	
@@ -17,17 +17,17 @@ public class Waver {
 		waveWidth=_waveWidth;
 		freq=_freq;
 		color=_color;
-		timeSinceLastWave=freq;
+		timeLeft=freq;
 	}
 	public Wave generateWave ()
 	{
-		timeSinceLastWave=0;
+		timeLeft=0;
 		Wave w= new Wave (x, y, speed, waveWidth, color);
 		return w;
 	}
 	
 	public void update (double dt)
 	{
-		timeSinceLastWave-=dt;
+		timeLeft-=dt;
 	}
 }
