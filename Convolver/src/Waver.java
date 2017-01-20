@@ -1,7 +1,7 @@
 import java.awt.Color;
 
 public class Waver {
-	double cx, cy;
+	double x, y;
 	double speed;
 	double waveWidth;
 	double freq;
@@ -11,18 +11,23 @@ public class Waver {
 	
 	public Waver (double centerX, double centerY, double _speed, double _waveWidth, double _freq, Color _color)
 	{
-		cx=centerX;
-		cy=centerY;
+		x=centerX;
+		y=centerY;
 		speed=_speed;
 		waveWidth=_waveWidth;
 		freq=_freq;
 		color=_color;
-		timeSinceLastWave=0;
+		timeSinceLastWave=freq;
 	}
 	public Wave generateWave ()
 	{
 		timeSinceLastWave=0;
-		Wave w= new Wave (cx, cy, speed, waveWidth, color);
+		Wave w= new Wave (x, y, speed, waveWidth, color);
 		return w;
+	}
+	
+	public void update (double dt)
+	{
+		timeSinceLastWave-=dt;
 	}
 }
