@@ -15,6 +15,7 @@ public class Wave
 	public static double	intesificationRate	= 0.1;
 	Color					color;
 	boolean					surfable			= true;
+	boolean damaging =false;
 
 	public Wave(double originX, double originY, double _speed, double _width, Color _color)
 	{
@@ -36,6 +37,12 @@ public class Wave
 		this(originX, originY, _speed, _width, _color);
 		maxR1 = maxRadius;
 		surfable = false;
+	}
+	public Wave(double originX, double originY, double _speed, double _width, Color _color, double maxRadius, boolean _damaging)
+	{
+		this(originX, originY, _speed, _width, _color, maxRadius);
+		surfable = false;
+		damaging=_damaging;
 	}
 
 	public void update(double dt)
