@@ -7,14 +7,14 @@ double speed;
 Color color;
 public static Color pink, red;
 
-public Wave (double originX, double originY, double speed, double width, Color color)
+public Wave (double originX, double originY, double _speed, double width, Color _color)
 {
 	cx=originX;
 	cy=originY;
-	this.speed=speed;
+	this.speed=_speed;
 	this.r1=-width;
 	this.r2=0;
-	this.color=color;
+	this.color=_color;
 }
 
 public void update (double dt)

@@ -60,6 +60,14 @@ class Main extends JFrame implements KeyListener, MouseListener, MouseMotionList
 			Wave w = waves.get(i);
 			w.update(deltaTime);
 		}
+		for (int i = 0; i < wavers.size(); i++) {
+			Waver wr = wavers.get(i);
+			wr.update(deltaTime);
+			if (wr.timeLeft <= 0)
+			{
+				waves.add(wr.generateWave());
+			}
+		}
 	}
 
 	// This is what you use to call draw methods or to just draw. Is called in
@@ -74,13 +82,23 @@ class Main extends JFrame implements KeyListener, MouseListener, MouseMotionList
 
 		// Draw stuff
 
+		buffer.drawOval(-20, -20, 40, 40);
 		// Waves
 		for (Wave w : waves) {
 			// Draw outlines
 			buffer.setStroke(new BasicStroke(2));
 			buffer.setColor(Wave.pink);
-			buffer.drawOval((int)(w.cx - w.r2), (int)(w.cy - w.r2), (int)(2 * w.r2), (int)(2 * w.r2));
-			buffer.drawOval((int)(w.cx - w.r1), (int)(w.cy - w.r1), (int)(2 * w.r1), (int)(2 * w.r1));
+			buffer.drawOval((int) (w.cx - w.r2), (int) (w.cy - w.r2), (int) (2 * w.r2), (int) (2 * w.r2));
+			buffer.drawOval((int) (w.cx - w.r1), (int) (w.cy - w.r1), (int) (2 * w.r1), (int) (2 * w.r1));
+		}
+
+		// Wavers
+		for (Waver wr : wavers) {
+			// Draw plus sign
+			buffer.setStroke(new BasicStroke(2));
+			buffer.setColor(Color.red);
+			buffer.drawLine((int)(wr.x),(int)(wr.y-20),(int)(wr.x),(int)(wr.y+20));
+			buffer.drawLine((int)(wr.x-20),(int)(wr.y),(int)(wr.x+20),(int)(wr.y));
 		}
 
 		// Move camera back
@@ -106,9 +124,9 @@ class Main extends JFrame implements KeyListener, MouseListener, MouseMotionList
 		waves = new ArrayList<Wave>();
 		wavers = new ArrayList<Waver>();
 
-		wavers.add(new Waver(300, 150, 120, 1.0, Wave.pink));
-		wavers.add(new Waver(-300, -350, 120, 1.0, Wave.pink));
-		wavers.add(new Waver(100, 550, 120, 1.0, Wave.pink));
+		wavers.add(new Waver(300, 150, 120, 120, 1.0, Wave.pink));
+		wavers.add(new Waver(-300, -350, 120, 120, 1.0, Wave.pink));
+		wavers.add(new Waver(100, 550, 120, 120, 1.0, Wave.pink));
 	}
 
 	// Is called when you start to press a key, and then keeps being called
