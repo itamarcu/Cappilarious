@@ -27,6 +27,10 @@ public class Waver {
 		timeLeft = 1; //is good
 
 	}
+	public Waver(double centerX, double centerY, double _speed, double _waveWidth, double _freq, double delay,  Color _color) {
+	this(centerX, centerY, _speed, _waveWidth,_freq, _color);
+	timeLeft=delay;
+	}
 
 	public Wave generateWave() {
 		timeLeft = freq;
