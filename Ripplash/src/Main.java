@@ -105,7 +105,7 @@ class Main extends JFrame implements KeyListener, MouseListener, MouseMotionList
 				return;
 			}
 		}
-		if (player.life.life < 0)
+		if (player.life.life <= 0 && !restarting)
 		{
 			// game over
 			deathFade = 2;
@@ -385,10 +385,10 @@ class Main extends JFrame implements KeyListener, MouseListener, MouseMotionList
 			{
 				TringlerDeath tc = tringlerCorpses.get(i);
 				tc.update(deltaTime);
-				if(tc.pos<0)
+				if (tc.pos < 0)
 				{
-				tringlerCorpses.remove(i);
-				i--;
+					tringlerCorpses.remove(i);
+					i--;
 				}
 			}
 		}
@@ -440,7 +440,6 @@ class Main extends JFrame implements KeyListener, MouseListener, MouseMotionList
 		// Wavers
 		for (Waver wr : wavers)
 		{
-			// Draw plus sign
 			buffer.setStroke(new BasicStroke(2));
 			float a = (float) (0.5 - 0.5 * wr.timeLeft / wr.freq);
 			int radius = (int) (4 + 30 * Math.sin(3 * wr.timeLeft / wr.freq));
@@ -488,7 +487,7 @@ class Main extends JFrame implements KeyListener, MouseListener, MouseMotionList
 				buffer.drawPolygon(xPoints, yPoints, 3);
 			}
 		}
-//tringlr corpses
+		// tringlr corpses
 		synchronized (tringlerCorpses)
 		{
 			for (TringlerDeath tc : tringlerCorpses)
@@ -506,11 +505,11 @@ class Main extends JFrame implements KeyListener, MouseListener, MouseMotionList
 		if (dashTime <= 0)
 		{
 			double choking = Math.min(255, Math.max(0, player.underwaterTimer / Player.maxUnderwater));
-			buffer.setColor(new Color(255, 200, (int) (200 * choking)));
+			buffer.setColor(new Color(player.normalColor.getRed(), player.normalColor.getBlue(), (int) (player.normalColor.getGreen() * choking)));
 			if (player.injureFlash <= 0.15)
-				buffer.setColor(Color.RED);
+				buffer.setColor(player.injuredColor);
 			buffer.fillOval((int) (player.x - player.radius), (int) (player.y - player.radius), 2 * player.radius, 2 * player.radius);
-			buffer.setColor(Color.BLACK);
+			buffer.setColor(player.normalOutline);
 			buffer.drawOval((int) (player.x - player.radius), (int) (player.y - player.radius), 2 * player.radius, 2 * player.radius);
 
 		} else
@@ -527,9 +526,9 @@ class Main extends JFrame implements KeyListener, MouseListener, MouseMotionList
 				yPoints[i] = (int) (player.y + player.radius * amount * Math.sin(rotation + TAU / 4 * i));
 			}
 			buffer.setStroke(new BasicStroke(3));
-			buffer.setColor(Color.YELLOW);
+			buffer.setColor(player.dashColor);
 			buffer.fillPolygon(xPoints, yPoints, 4);
-			buffer.setColor(Color.MAGENTA);
+			buffer.setColor(player.dashOutline);
 			buffer.drawPolygon(xPoints, yPoints, 4);
 
 		}
@@ -567,12 +566,12 @@ class Main extends JFrame implements KeyListener, MouseListener, MouseMotionList
 		if (deathFade > 0)
 		{
 			// draw player above everything, moving to spawn
-			double position = Math.cos(Math.PI * (2 - deathFade)/2);
-			double x = frameWidth/2+player.x * position;
-			double y = frameHeight/2+player.y * position;
-			buffer.setColor(Color.ORANGE);
+			double position = Math.cos(Math.PI * (2 - deathFade) / 2);
+			double x = frameWidth / 2 + player.x * position;
+			double y = frameHeight / 2 + player.y * position;
+			buffer.setColor(player.normalColor);
 			buffer.fillOval((int) (x - player.radius), (int) (y - player.radius), 2 * player.radius, 2 * player.radius);
-			buffer.setColor(Color.BLACK);
+			buffer.setColor(player.normalOutline);
 			buffer.drawOval((int) (x - player.radius), (int) (y - player.radius), 2 * player.radius, 2 * player.radius);
 
 		}
@@ -662,7 +661,7 @@ class Main extends JFrame implements KeyListener, MouseListener, MouseMotionList
 			horizontalMovement -= 1;
 		if (rightPressed)
 			horizontalMovement += 1;
-		if (horizontalMovement == 0 && verticalMovement == 0)
+		if (deathFade > 0 || horizontalMovement == 0 && verticalMovement == 0)
 			return new double[]
 			{ 0, 0 };
 		return new double[]

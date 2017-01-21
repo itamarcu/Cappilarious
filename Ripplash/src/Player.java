@@ -1,3 +1,4 @@
+import java.awt.Color;
 
 public class Player extends Surfer
 {
@@ -7,6 +8,11 @@ public class Player extends Surfer
 	LifeRing				life				= new LifeRing(100);
 	double					cantControlTimeLeft	= 0;
 	public static double	dashSpeedPow2		= 1600000;
+	public Color			normalColor			= Color.orange;
+	public Color			dashColor			= Color.orange;
+	public Color			normalOutline		= Color.black;
+	public Color			dashOutline			= Color.magenta;
+	public Color			injuredColor		= Color.red;
 
 	public Player(int x_, int y_, double maxSpeed)
 	{
