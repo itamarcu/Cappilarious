@@ -18,7 +18,7 @@ public class Tringler
 	{
 		x = x_;
 		y = y_;
-		chargeTimeLeft = 4;
+		chargeTimeLeft = 3.9;
 		rotation = 0;
 		xVel = 0;
 		yVel = 0;
