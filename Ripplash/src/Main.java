@@ -458,9 +458,9 @@ class Main extends JFrame implements KeyListener, MouseListener, MouseMotionList
 		for (Waver wr : wavers)
 		{
 			buffer.setStroke(new BasicStroke(2));
-			float a = (float) (0.5 - 0.5 * wr.timeLeft / wr.freq);
+			int alpha =(int) (255*(0.5 - 0.5 * wr.timeLeft / wr.freq));
 			int radius = (int) (4 + 30 * Math.sin(3 * wr.timeLeft / wr.freq));
-			buffer.setColor(new Color(0, 0, 0, a));
+			buffer.setColor(Colors.opacitate(Colors.waveColor, alpha));
 			buffer.fillOval((int) (wr.x - radius), (int) (wr.y - radius), 2 * radius, 2 * radius);
 		}
 		// Surfers
@@ -470,9 +470,9 @@ class Main extends JFrame implements KeyListener, MouseListener, MouseMotionList
 			{
 				buffer.setStroke(new BasicStroke(2));
 				int alpha = (int)(255* Math.min(1, 1 - s.underwaterTimer / 1.0));
-				buffer.setColor(Colors.opacitate(Colors.normalColor, alpha));
+				buffer.setColor(Colors.opacitate(Colors.enemyColor, alpha));
 				buffer.fillOval((int) (s.x - s.radius), (int) (s.y - s.radius), 2 * s.radius, 2 * s.radius);
-				buffer.setColor(Colors.opacitate(Colors.normalOutline, alpha));
+				buffer.setColor(Colors.opacitate(Colors.enemyOutline, alpha));
 				buffer.drawOval((int) (s.x - s.radius), (int) (s.y - s.radius), 2 * s.radius, 2 * s.radius);
 			}
 		}
