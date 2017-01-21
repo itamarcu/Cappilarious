@@ -656,11 +656,11 @@ class Main extends JFrame implements KeyListener, MouseListener, MouseMotionList
 
 		if (gameLaunch)
 		{
-			bgMusic = new SoundEffect("BG_Music.wav");
-			bgMusicUnderWater = new SoundEffect("clang.wav"); //not working!!!!!! BUG
-			bgMusic.loop();
-			bgMusicUnderWater.loop();
-			bgMusicUnderWater.setVolume(0);
+			// bgMusic = new SoundEffect("BG_Music.wav");
+			// bgMusicUnderWater = new SoundEffect("underwater effect.wav"); //not working!!!!!! BUG
+			// bgMusic.loop();
+			// bgMusicUnderWater.loop();
+			// bgMusicUnderWater.setVolume(0);
 		}
 		player = new Player(0, 0, 450);
 		waves.add(new Wave(player.x + (int) (-4 + 2 * Math.random()), player.y + (int) (-4 + 2 * Math.random()), 60, 100));
@@ -720,6 +720,7 @@ class Main extends JFrame implements KeyListener, MouseListener, MouseMotionList
 
 	void plunge(boolean in)
 	{
+		System.out.println(bgMusicUnderWater.sound.getFramePosition());
 		player.plunged = in;
 		if (in)
 		{
