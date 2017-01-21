@@ -1,5 +1,3 @@
-import java.awt.Color;
-
 public class Player extends Surfer
 {
 	int						ripple				= 0;
