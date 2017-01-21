@@ -68,8 +68,4 @@ public class TringlerDeath
 			intArray[i] = (int) arr[i];
 		return intArray;
 	}
-	public Color opacitate (Color color)
-	{
-		return new Color (color.getRed(), color.getGreen(), color.getBlue(), (int)(pos/0.5*255));
-	}
 }

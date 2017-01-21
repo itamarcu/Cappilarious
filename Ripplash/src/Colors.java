@@ -37,19 +37,19 @@ public static int curr=0;
 			waveColor = new Color(0, 50, 50, 150);
 			break;
 		case 1:
-			backgroundColor		= new Color(240, 235, 0);
+			backgroundColor		= new Color(50, 15, 0);
 			// player/enemy
-			normalColor = new Color(150, 0, 125);
-			dashColor = new Color(200, 0, 125);
-			normalOutline = new Color(50, 50, 0);
-			dashOutline = new Color(100, 50, 0);
+			normalColor = new Color(255, 20, 0);
+			dashColor = new Color(255, 0, 0);
+			normalOutline = new Color(255, 255, 100);
+			dashOutline = new Color(255, 255, 50);
 			injuredColor = Color.red;
 			chokingColor = new Color(100, 0, 100, 150);
 			// tringler
-			tringlerColor = new Color(50, 0, 0);
+			tringlerColor = new Color(255, 200, 0);
 			tringlerOutline = new Color(255, 0, 0);
 			//wave
-			waveColor = new Color(100, 0, 0, 150);
+			waveColor = new Color(255, 30, 0, 150);
 			break;
 		}
 	}
@@ -57,5 +57,9 @@ public static int curr=0;
 	{
 		curr=(curr+1)%2;
 		Colors.setColors(Colors.curr);
+	}
+	public static Color opacitate (Color color, int a)
+	{
+		return new Color (color.getRed(), color.getGreen(), color.getBlue(), (int)(a));
 	}
 }

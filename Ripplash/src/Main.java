@@ -462,10 +462,10 @@ class Main extends JFrame implements KeyListener, MouseListener, MouseMotionList
 			for (Surfer s : enemySurfers)
 			{
 				buffer.setStroke(new BasicStroke(2));
-				float alpha = (float) Math.min(1, 1 - s.underwaterTimer / 1.0);
-				buffer.setColor(new Color(0, 0, 0, alpha));
+				int alpha = (int)(255* Math.min(1, 1 - s.underwaterTimer / 1.0));
+				buffer.setColor(Colors.opacitate(Colors.normalColor, alpha));
 				buffer.fillOval((int) (s.x - s.radius), (int) (s.y - s.radius), 2 * s.radius, 2 * s.radius);
-				buffer.setColor(new Color(1, 1, 1, alpha));
+				buffer.setColor(Colors.opacitate(Colors.normalOutline, alpha));
 				buffer.drawOval((int) (s.x - s.radius), (int) (s.y - s.radius), 2 * s.radius, 2 * s.radius);
 			}
 		}
@@ -503,10 +503,10 @@ class Main extends JFrame implements KeyListener, MouseListener, MouseMotionList
 			for (TringlerDeath tc : tringlerCorpses)
 			{
 				buffer.setStroke(new BasicStroke(2));
-				buffer.setColor(tc.opacitate(Colors.tringlerColor));
+				buffer.setColor(Colors.opacitate(Colors.tringlerColor, (int)(tc.pos/0.5*255)));
 				buffer.fillPolygon(TringlerDeath.getPaintablePoints(tc.xPoints1), TringlerDeath.getPaintablePoints(tc.yPoints1), 3);
 				buffer.fillPolygon(TringlerDeath.getPaintablePoints(tc.xPoints2), TringlerDeath.getPaintablePoints(tc.yPoints2), 3);
-				buffer.setColor(tc.opacitate(Colors.tringlerOutline));
+				buffer.setColor(Colors.opacitate(Colors.tringlerOutline, (int)(tc.pos/0.5*255)));
 				buffer.drawPolygon(TringlerDeath.getPaintablePoints(tc.xPoints1), TringlerDeath.getPaintablePoints(tc.yPoints1), 3);
 				buffer.drawPolygon(TringlerDeath.getPaintablePoints(tc.xPoints2), TringlerDeath.getPaintablePoints(tc.yPoints2), 3);
 			}
