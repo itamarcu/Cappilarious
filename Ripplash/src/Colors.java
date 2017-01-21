@@ -96,6 +96,8 @@ public static int curr=0;
 			//wave
 			waveColor = new Color(0, 0, 0, 255);
 			break;
+		default:
+			break;
 		}
 	}
 	public static void nextColor()
