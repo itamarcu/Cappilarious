@@ -8,7 +8,7 @@ public class Surfer {
 	int lastWaveIndex;
 	double xVel, yVel;
 	boolean shielded = false;
-	public Surfer(int x_, int y_, double maxSpeed)
+	public Surfer(double x_, double y_, double maxSpeed)
 	{
 		lastWaveIndex = -1;
 		x = x_;

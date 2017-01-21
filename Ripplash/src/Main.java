@@ -283,10 +283,12 @@ class Main extends JFrame implements KeyListener, MouseListener, MouseMotionList
 			{
 				eventTimeLeft = eventFrequency;
 				double ayn = Math.random();
-				if (ayn < 0.1)
+				if (ayn < 0.5)
 				{
-					if (enemySurfers.size() < 1) // maximum 1 enemy surfer
-						enemySurfers.add(new Surfer(0, 0, 300));
+					enemySurfers.add(new Surfer(Math.random()*frameWidth-frameWidth/2, Math.random()*frameHeight-frameHeight/2, 300));
+					enemySurfers.add(new Surfer(Math.random()*frameWidth-frameWidth/2, Math.random()*frameHeight-frameHeight/2, 300));
+					enemySurfers.add(new Surfer(Math.random()*frameWidth-frameWidth/2, Math.random()*frameHeight-frameHeight/2, 300));
+					enemySurfers.add(new Surfer(Math.random()*frameWidth-frameWidth/2, Math.random()*frameHeight-frameHeight/2, 300));
 				} else if (ayn < 1.0)
 					if (tringlers.size() < 6) // maximum 6 enemy tringlers
 						tringlers.add(new Tringler(Math.random() * frameWidth - frameWidth / 2, Math.random() * frameHeight - frameHeight / 2));
