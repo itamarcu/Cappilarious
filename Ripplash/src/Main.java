@@ -45,6 +45,7 @@ class Main extends JFrame implements KeyListener, MouseListener, MouseMotionList
 	Player						player;
 	List<Surfer>				enemySurfers;
 	List<Tringler>				tringlers;
+	List<TringlerDeath>			tringlerCorpses;
 	List<SoundEffect>			allSounds;
 	double						eventTimeLeft			= 10, eventFrequency = 7;
 	int							challengeLevel			= 0;
@@ -243,6 +244,7 @@ class Main extends JFrame implements KeyListener, MouseListener, MouseMotionList
 				Tringler t = tringlers.get(i);
 				if (Math.pow(t.x - player.x, 2) + Math.pow(t.y - player.y, 2) > 1200 * 1200)
 				{
+					tringlerCorpses.add(new TringlerDeath(t, player.x, player.y));
 					tringlers.remove(i);
 					i--;
 					killsNeeded--;
@@ -255,12 +257,14 @@ class Main extends JFrame implements KeyListener, MouseListener, MouseMotionList
 					// collision
 					if (!player.shielded)
 					{
+						tringlerCorpses.add(new TringlerDeath(t, player.x, player.y));
 						tringlers.remove(i);
 						i--;
 						killsNeeded--;
 						player.damage(10);
 					} else if (t.slowDown)
 					{
+						tringlerCorpses.add(new TringlerDeath(t, player.x, player.y));
 						tringlers.remove(i);
 						i--;
 						killsNeeded--;
@@ -315,6 +319,19 @@ class Main extends JFrame implements KeyListener, MouseListener, MouseMotionList
 					t.yVel = 10 * Math.sin(angle);
 					t.slowDown = false;
 					t.prevDistPow2 = 9999999;
+				}
+			}
+		}
+		synchronized (tringlerCorpses)
+		{
+			for (int i = 0; i < tringlerCorpses.size(); i++)
+			{
+				TringlerDeath tc = tringlerCorpses.get(i);
+				tc.update(deltaTime);
+				if(tc.pos<0)
+				{
+				tringlerCorpses.remove(i);
+				i--;
 				}
 			}
 		}
@@ -413,7 +430,20 @@ class Main extends JFrame implements KeyListener, MouseListener, MouseMotionList
 				buffer.drawPolygon(xPoints, yPoints, 3);
 			}
 		}
-
+//tringlr corpses
+		synchronized (tringlerCorpses)
+		{
+			for (TringlerDeath tc : tringlerCorpses)
+			{
+				buffer.setStroke(new BasicStroke(2));
+				buffer.setColor(tc.opacitate(Tringler.sicklyGreen));
+				buffer.fillPolygon(TringlerDeath.getPaintablePoints(tc.xPoints1), TringlerDeath.getPaintablePoints(tc.yPoints1), 3);
+				buffer.fillPolygon(TringlerDeath.getPaintablePoints(tc.xPoints2), TringlerDeath.getPaintablePoints(tc.yPoints2), 3);
+				buffer.setColor(tc.opacitate(Tringler.radGreen));
+				buffer.drawPolygon(TringlerDeath.getPaintablePoints(tc.xPoints1), TringlerDeath.getPaintablePoints(tc.yPoints1), 3);
+				buffer.drawPolygon(TringlerDeath.getPaintablePoints(tc.xPoints2), TringlerDeath.getPaintablePoints(tc.yPoints2), 3);
+			}
+		}
 		// Player
 		if (dashTime <= 0)
 		{
@@ -476,6 +506,7 @@ class Main extends JFrame implements KeyListener, MouseListener, MouseMotionList
 		wavers = new ArrayList<Waver>();
 		enemySurfers = new ArrayList<Surfer>();
 		tringlers = new ArrayList<Tringler>();
+		tringlerCorpses = new ArrayList<TringlerDeath>();
 		allSounds = new ArrayList<SoundEffect>();
 
 		player = new Player(0, 0, 450);
