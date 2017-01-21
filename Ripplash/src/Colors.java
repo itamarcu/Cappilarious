@@ -96,11 +96,29 @@ public static int curr=0;
 			//wave
 			waveColor = new Color(0, 0, 0, 255);
 			break;
+		case 4:
+			backgroundColor		= new Color(0, 0, 0);
+			// player/enemy
+			normalColor = new Color(100, 255, 0);
+			dashColor = new Color(100, 255, 0);
+			normalOutline = new Color(0, 0, 0);
+			dashOutline = new Color(255, 255, 255);
+			injuredColor = new Color (0,150,0);
+			chokingColor = new Color(50,100,50);
+			//enemy
+			enemyColor = new Color(100, 255, 0);
+			enemyOutline = new Color(0, 0, 0);
+			// tringler
+			tringlerColor = new Color(50, 150, 0);
+			tringlerOutline = new Color(100, 255, 0);
+			//wave
+			waveColor = new Color(50, 200, 20, 150);
+			break;
 		}
 	}
 	public static void nextColor()
 	{
-		curr=(curr+1)%4;
+		curr=(curr+1)%5;
 		Colors.setColors(Colors.curr);
 	}
 	public static Color opacitate (Color color, int a)
