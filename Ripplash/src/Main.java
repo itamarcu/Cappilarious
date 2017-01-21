@@ -219,7 +219,7 @@ class Main extends JFrame implements KeyListener, MouseListener, MouseMotionList
 		}
 		if (player.cantControlTimeLeft > 0)
 			player.cantControlTimeLeft -= deltaTime;
-		if (player.lastWaveIndex == -1)
+		if (player.lastWaveIndex == -1 && deathFade <= 0)
 			player.holdBreath(deltaTime);
 		else if (player.underwaterTimer > 0)
 			player.underwaterTimer -= deltaTime * 3;
@@ -504,8 +504,10 @@ class Main extends JFrame implements KeyListener, MouseListener, MouseMotionList
 		// Player
 		if (dashTime <= 0)
 		{
-			double choking = Math.min(255, Math.max(0, player.underwaterTimer / Player.maxUnderwater));
-			buffer.setColor(new Color(player.normalColor.getRed(), player.normalColor.getBlue(), (int) (player.normalColor.getGreen() * choking)));
+			double choking = Math.min(1, Math.max(0, 1 - player.underwaterTimer / Player.maxUnderwater));
+			buffer.setColor(new Color((int) (player.normalColor.getRed() * choking + player.chokingColor.getRed() * (1 - choking)),
+					(int) (player.normalColor.getGreen() * choking + player.chokingColor.getGreen() * (1 - choking)),
+					(int) (player.normalColor.getBlue() * choking + player.chokingColor.getBlue() * (1 - choking))));
 			if (player.injureFlash <= 0.15)
 				buffer.setColor(player.injuredColor);
 			buffer.fillOval((int) (player.x - player.radius), (int) (player.y - player.radius), 2 * player.radius, 2 * player.radius);

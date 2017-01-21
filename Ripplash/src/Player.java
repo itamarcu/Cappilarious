@@ -13,10 +13,12 @@ public class Player extends Surfer
 	public Color			normalOutline		= Color.black;
 	public Color			dashOutline			= Color.magenta;
 	public Color			injuredColor		= Color.red;
+	public Color			chokingColor		= Color.white;
 
 	public Player(int x_, int y_, double maxSpeed)
 	{
 		super(x_, y_, maxSpeed);
+		underwaterTimer = 0;
 		radius = 12;
 	}
 
