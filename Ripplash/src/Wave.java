@@ -145,4 +145,10 @@ public class Wave
 		double dist = Math.pow(x - cx, 2) + Math.pow(y - cy, 2);
 		return dist >= Math.pow(r1, 2) && dist <= Math.pow(r2, 2);
 	}
+
+	public boolean contains(Surfer s)
+	{
+		double dist = Math.pow(s.x - cx, 2) + Math.pow(s.y - cy, 2);
+		return dist >= Math.pow(r1+s.radius, 2) && dist <= Math.pow(r2-s.radius, 2);
+	}
 }
