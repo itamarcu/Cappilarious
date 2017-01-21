@@ -13,9 +13,11 @@ public class SoundEffect
 	public boolean		paused				= false;
 	public boolean		loopOrPlay			= false;
 	public boolean		endUnlessMaintained	= false;
+	public String		name;
 
 	public SoundEffect(String fileName)
 	{
+		name = fileName;
 		sound = ResourceLoader.getClip(fileName);
 		volumeControl = (FloatControl) sound.getControl(FloatControl.Type.MASTER_GAIN);// default is 0, can be between -80 and 6.02 for some reason (dB). Logarithmic. ~-50 is unheardable, and there's barely any difference between 0 and 6.
 		volume = 1;
