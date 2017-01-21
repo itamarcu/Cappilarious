@@ -178,7 +178,7 @@ class Main extends JFrame implements KeyListener, MouseListener, MouseMotionList
 		timeSinceLastKeyPressed += deltaTime;
 		if (dashCooldown > 0)
 			dashCooldown -= deltaTime;
-
+		player.life.rotate(deltaTime);
 		for (int i = 0; i < wavers.size(); i++)
 		{
 			Waver wr = wavers.get(i);
@@ -413,8 +413,16 @@ class Main extends JFrame implements KeyListener, MouseListener, MouseMotionList
 			buffer.drawPolygon(xPoints, yPoints, 4);
 
 		}
-
-		// Move camera back
+		//Life Ring
+				/*buffer.setColor(Color.BLACK);
+				buffer.setStroke(new BasicStroke((int) (6)));
+				buffer.drawArc((int)player.x-player.radius, (int)player.y-player.radius, player.radius*2, player.radius*2, 0, (int)360);*/
+				buffer.setColor(player.life.getColor());
+				buffer.setStroke(new BasicStroke((int) (4)));
+				int gap = 5;
+				buffer.drawArc((int)player.x-player.radius-gap, (int)player.y-player.radius-gap, (player.radius+gap)*2, (player.radius+gap)*2, (int)(player.life.rotation), (int)(player.life.getAngle()/TAU*180));
+				buffer.drawArc((int)player.x-player.radius-gap, (int)player.y-player.radius-gap, (player.radius+gap)*2, (player.radius+gap)*2, (int)(player.life.rotation)+180, (int)(player.life.getAngle()/TAU*180));
+				// Move camera back
 		buffer.setTransform(original);
 	}
 
