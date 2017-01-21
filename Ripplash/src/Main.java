@@ -179,6 +179,7 @@ class Main extends JFrame implements KeyListener, MouseListener, MouseMotionList
 			moveSurfer(player, direction, deltaTime);
 			if (dash)
 			{
+				//begin dash
 				if (direction[1] != 0)
 				{
 					player.xVel = 500 * Math.cos(direction[0]);
@@ -189,6 +190,7 @@ class Main extends JFrame implements KeyListener, MouseListener, MouseMotionList
 					player.lastWaveIndex = -1;
 					player.ripple = 1;
 					dashCooldown = 1;
+					playSound("water drip 1.wav");
 				}
 			}
 		} else
