@@ -7,6 +7,7 @@ import java.awt.Image;
 import java.awt.MouseInfo;
 import java.awt.Point;
 import java.awt.PointerInfo;
+import java.awt.Shape;
 import java.awt.event.ComponentEvent;
 import java.awt.event.ComponentListener;
 import java.awt.event.KeyEvent;
@@ -20,6 +21,9 @@ import java.awt.event.WindowAdapter;
 import java.awt.event.WindowEvent;
 import java.awt.event.WindowFocusListener;
 import java.awt.geom.AffineTransform;
+import java.awt.geom.Area;
+import java.awt.geom.Ellipse2D;
+import java.awt.geom.Rectangle2D;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -28,15 +32,17 @@ import javax.swing.JFrame;
 class Main extends JFrame implements KeyListener, MouseListener, MouseMotionListener, MouseWheelListener, ComponentListener, WindowFocusListener
 {
 	// Constants
-	final double				TAU						= 2 * Math.PI;
-	final double				extraDistanceVertical	= 40;
-	final double				extraDistanceHorizontal	= 10;
+	final double				TAU								= 2 * Math.PI;
+	final double				extraDistanceVertical			= 40;
+	final double				extraDistanceHorizontal			= 10;
+	final double				extraEnemyDistanceVertical		= 55;
+	final double				extraEnemyDistanceHorizontal	= 23;
 
 	// Variables
-	boolean						leftMousePressed		= false;
+	boolean						leftMousePressed				= false;
 	boolean						leftPressed, rightPressed, upPressed, downPressed;
-	Point						camera;												// Marks the CENTER of the screen to be drawn, not the top
-																					// left point
+	Point						camera;														// Marks the CENTER of the screen to be drawn, not the top
+																							// left point
 
 	double						timeThatPassed;
 
@@ -46,28 +52,32 @@ class Main extends JFrame implements KeyListener, MouseListener, MouseMotionList
 	List<Surfer>				enemySurfers;
 	List<Tringler>				tringlers;
 	List<SoundEffect>			allSounds;
-	double						eventTimeLeft			= 10, eventFrequency = 7;
-	int							challengeLevel			= 0;
-	int							killsNeeded				= 1;
-	int							lastKeyPressed			= -1;
-	double						timeSinceLastKeyPressed	= 999;
-	boolean						dash					= false;
-	double						dashTime				= -1;
-	double						dashCooldown			= 1;
+	double						eventTimeLeft					= 10, eventFrequency = 7;
+	int							challengeLevel					= 0;
+	int							killsNeeded						= 1;
+	int							lastKeyPressed					= -1;
+	double						timeSinceLastKeyPressed			= 999;
+	boolean						dash							= false;
+	double						dashTime						= -1;
+	double						dashCooldown					= 1;
+	double						deathFade						= 1;						// 2 =just died, 1 = black screen, 0 = started new game
+	double[]					deathFadePoint					=
+	{ 0, 0 };
+	boolean						restarting						= false;
 
 	// Stuff that should not be touched
-	private static final long	serialVersionUID		= 1;
+	private static final long	serialVersionUID				= 1;
 	int							frameHeight, frameWidth;
-	PointerInfo					pin;												// Don't use this
-	Point						incorrectMousePoint		= new Point();				// Don't use that
-	int							mx						= 0;						// Mouse X coordinate relative to FRAME
-	int							my						= 0;						// Mouse Y coordinate relative to FRAME
-	int							bufferWidth;										// ignore
-	int							bufferHeight;										// ignore
-	Image						bufferImage;										// ignore, unless you want to do stuff with this
-	Graphics					bufferGraphics;										// ignore
-	boolean						test					= false;
-	Color						bgColor					= new Color(50, 150, 255);
+	PointerInfo					pin;														// Don't use this
+	Point						incorrectMousePoint				= new Point();				// Don't use that
+	int							mx								= 0;						// Mouse X coordinate relative to FRAME
+	int							my								= 0;						// Mouse Y coordinate relative to FRAME
+	int							bufferWidth;												// ignore
+	int							bufferHeight;												// ignore
+	Image						bufferImage;												// ignore, unless you want to do stuff with this
+	Graphics					bufferGraphics;												// ignore
+	boolean						test							= false;
+	Color						bgColor							= new Color(50, 150, 255);
 
 	// This is where the magic happens
 	void gameFrame(double deltaTime)
@@ -83,6 +93,25 @@ class Main extends JFrame implements KeyListener, MouseListener, MouseMotionList
 			}
 		}
 
+		// deathFade
+		if (deathFade > 0)
+		{
+			deathFade -= deltaTime;
+			if (deathFade <= 1 && restarting)
+			{
+				restart();
+				restarting = false;
+				return;
+			}
+		}
+		if (player.life.life < 0)
+		{
+			// game over
+			deathFade = 2;
+			restarting = true;
+			deathFadePoint = new double[]
+			{ player.x, player.y };
+		}
 		synchronized (waves)
 		{
 			for (int i = 0; i < waves.size(); i++)
@@ -215,7 +244,31 @@ class Main extends JFrame implements KeyListener, MouseListener, MouseMotionList
 			for (int i = 0; i < enemySurfers.size(); i++)
 			{
 				Surfer s = enemySurfers.get(i);
-				if (Math.pow(s.x - player.x, 2) + Math.pow(s.y - player.y, 2) > 1200 * 1200)
+				if (s.x < -frameWidth / 2 + extraEnemyDistanceHorizontal)
+				{
+					s.x = -frameWidth / 2 + extraEnemyDistanceHorizontal;
+					s.lastWaveIndex = -1;
+				}
+				if (s.x > frameWidth / 2 - extraEnemyDistanceHorizontal)
+				{
+					s.x = frameWidth / 2 - extraEnemyDistanceHorizontal;
+					s.lastWaveIndex = -1;
+				}
+				if (s.y < -frameHeight / 2 + extraEnemyDistanceVertical)
+				{
+					s.y = -frameHeight / 2 + extraEnemyDistanceVertical;
+					s.lastWaveIndex = -1;
+				}
+				if (s.y > frameHeight / 2 - extraEnemyDistanceVertical + 20)
+				{
+					s.y = frameHeight / 2 - extraEnemyDistanceVertical + 20;
+					s.lastWaveIndex = -1;
+				}
+				if (s.lastWaveIndex == -1)
+					s.underwaterTimer += deltaTime;
+				else
+					s.underwaterTimer = 0;
+				if (s.underwaterTimer > 1)
 				{
 					enemySurfers.remove(i);
 					i--;
@@ -241,6 +294,10 @@ class Main extends JFrame implements KeyListener, MouseListener, MouseMotionList
 			for (int i = 0; i < tringlers.size(); i++)
 			{
 				Tringler t = tringlers.get(i);
+				t.x = Math.min(t.x, frameWidth / 2 - extraEnemyDistanceHorizontal);
+				t.y = Math.min(t.y, frameHeight / 2 - extraEnemyDistanceVertical + 20); // sorry
+				t.x = Math.max(t.x, -frameWidth / 2 + extraEnemyDistanceHorizontal);
+				t.y = Math.max(t.y, -frameHeight / 2 + extraEnemyDistanceVertical);
 				if (Math.pow(t.x - player.x, 2) + Math.pow(t.y - player.y, 2) > 1200 * 1200)
 				{
 					tringlers.remove(i);
@@ -368,8 +425,8 @@ class Main extends JFrame implements KeyListener, MouseListener, MouseMotionList
 		{
 			// Draw plus sign
 			buffer.setStroke(new BasicStroke(2));
-			float a = (float) (0.5 - 0.5*wr.timeLeft / wr.freq);
-			int radius = (int)(4+16*Math.sin(3*wr.timeLeft / wr.freq));
+			float a = (float) (0.5 - 0.5 * wr.timeLeft / wr.freq);
+			int radius = (int) (4 + 30 * Math.sin(3 * wr.timeLeft / wr.freq));
 			buffer.setColor(new Color(0, 0, 0, a));
 			buffer.fillOval((int) (wr.x - radius), (int) (wr.y - radius), 2 * radius, 2 * radius);
 		}
@@ -379,9 +436,10 @@ class Main extends JFrame implements KeyListener, MouseListener, MouseMotionList
 			for (Surfer s : enemySurfers)
 			{
 				buffer.setStroke(new BasicStroke(2));
-				buffer.setColor(Color.BLACK);
+				float alpha = (float) Math.min(1, 1 - s.underwaterTimer / 1.0);
+				buffer.setColor(new Color(0, 0, 0, alpha));
 				buffer.fillOval((int) (s.x - s.radius), (int) (s.y - s.radius), 2 * s.radius, 2 * s.radius);
-				buffer.setColor(Color.WHITE);
+				buffer.setColor(new Color(1, 1, 1, alpha));
 				buffer.drawOval((int) (s.x - s.radius), (int) (s.y - s.radius), 2 * s.radius, 2 * s.radius);
 			}
 		}
@@ -417,7 +475,7 @@ class Main extends JFrame implements KeyListener, MouseListener, MouseMotionList
 		// Player
 		if (dashTime <= 0)
 		{
-			double choking = player.underwaterTimer / Player.maxUnderwater;
+			double choking = Math.min(255, Math.max(0, player.underwaterTimer / Player.maxUnderwater));
 			buffer.setColor(new Color(255, 200, (int) (200 * choking)));
 			if (player.injureFlash <= 0.15)
 				buffer.setColor(Color.RED);
@@ -458,6 +516,37 @@ class Main extends JFrame implements KeyListener, MouseListener, MouseMotionList
 				(int) (player.life.getAngle() / TAU * 180));
 		// Move camera back
 		buffer.setTransform(original);
+		// draw black rectangle except for constantly-rowing circle outwards from middle
+		if (deathFade <= 1)
+		{
+			double maxRad = 2 * frameWidth;
+			double radius = maxRad / 2 * (1 - deathFade);
+			Shape circle = new Ellipse2D.Double(deathFadePoint[0] + frameWidth / 2 - radius, deathFadePoint[1] + frameHeight / 2 - radius, 2 * radius, 2 * radius);
+			Area area = new Area(new Rectangle2D.Double(0, 0, frameWidth, frameHeight));
+			area.subtract(new Area(circle));
+			buffer.setClip(area);
+			buffer.setColor(Color.black);
+			buffer.fillRect(0, 0, frameWidth, frameHeight);
+		} else if (deathFade <= 2)
+		{
+			double maxRad = 2 * frameWidth;
+			double radius = maxRad / 2 * (2 - deathFade);
+			buffer.setColor(Color.black);
+			buffer.fillOval((int) (deathFadePoint[0] + frameWidth / 2 - radius), (int) (deathFadePoint[1] + frameHeight / 2 - radius), (int) (2 * radius), (int) (2 * radius));
+		}
+		if (deathFade > 0)
+		{
+			// draw player above everything, moving to spawn
+			double position = Math.cos(Math.PI * (2 - deathFade)/2);
+			double x = frameWidth/2+player.x * position;
+			double y = frameHeight/2+player.y * position;
+			buffer.setColor(Color.ORANGE);
+			buffer.fillOval((int) (x - player.radius), (int) (y - player.radius), 2 * player.radius, 2 * player.radius);
+			buffer.setColor(Color.BLACK);
+			buffer.drawOval((int) (x - player.radius), (int) (y - player.radius), 2 * player.radius, 2 * player.radius);
+
+		}
+		buffer.setClip(null);
 	}
 
 	// Setup of everything! Put stuff in here, not in Main()!
@@ -480,8 +569,8 @@ class Main extends JFrame implements KeyListener, MouseListener, MouseMotionList
 
 		player = new Player(0, 0, 450);
 		waves.add(new Wave(player.x + (int) (-4 + 2 * Math.random()), player.y + (int) (-4 + 2 * Math.random()), 60, 100, Wave.purple));
-		for (int i = 0; i < 5; i++)
-			tringlers.add(new Tringler(300 * Math.cos(i * TAU / 5), 300 * Math.sin(i * TAU / 5), 0.2 * i));
+		// for (int i = 0; i < 5; i++)
+		// enemySurfers.add(new Surfer(300 * Math.cos(i * TAU / 5), 300 * Math.sin(i * TAU / 5), 300));
 
 		wavers.add(new Waver(400, 150, 60, 40, 6.0, Wave.purple));
 		wavers.add(new Waver(-400, -150, 60, 40, 6.0, Wave.purple));
@@ -489,11 +578,12 @@ class Main extends JFrame implements KeyListener, MouseListener, MouseMotionList
 		wavers.add(new Waver(-150, 400, 60, 40, 6.0, Wave.purple));
 		wavers.get(0).timeLeft = 3;
 		wavers.get(1).timeLeft = 3;
-		eventTimeLeft = 10;
-		challengeLevel = 0;
-		killsNeeded = 1;
+		eventTimeLeft = 8;
+		challengeLevel = 1;
+		killsNeeded = 0;
 		dashTime = 0;
 		dashCooldown = 1;
+		deathFade = 1;
 	}
 
 	void events(double deltaTime)
@@ -629,7 +719,10 @@ class Main extends JFrame implements KeyListener, MouseListener, MouseMotionList
 		switch (e.getKeyCode())
 		{
 		case KeyEvent.VK_R:// Restart
-			restart();
+			deathFade = 2;
+			deathFadePoint = new double[]
+			{ player.x, player.y };
+			restarting = true;
 			break;
 		case KeyEvent.VK_ESCAPE:// Exit
 			exitGame();

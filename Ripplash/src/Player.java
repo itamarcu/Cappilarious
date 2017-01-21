@@ -2,7 +2,6 @@
 public class Player extends Surfer
 {
 	int						ripple				= 0;
-	double					underwaterTimer		= 0;
 	public static double	maxUnderwater		= 2;
 	double					injureFlash			= 1;
 	LifeRing				life				= new LifeRing(100);
