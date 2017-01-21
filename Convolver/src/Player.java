@@ -16,8 +16,12 @@ public class Player extends Surfer
 	public void damage(double d)
 	{
 		if (injureFlash > 0.5)
+		{
 			injureFlash = 0;
 		life.life -= d;
+		if(life.life<0)
+			life.life=0;
+		}
 	}
 
 	public void holdBreath(double dt)
@@ -25,7 +29,7 @@ public class Player extends Surfer
 		underwaterTimer += dt;
 		if (underwaterTimer >= Player.maxUnderwater)
 		{
-			this.damage(20 * dt);
+			this.damage(5 );
 			underwaterTimer = maxUnderwater;
 		}
 	}
