@@ -274,7 +274,7 @@ class Main extends JFrame implements KeyListener, MouseListener, MouseMotionList
 				{
 					enemySurfers.remove(i);
 					i--;
-					playSound("crackle.wav");
+					//playSound("whoosh.wav");
 					killsNeeded--;
 					continue;
 				}
@@ -284,10 +284,13 @@ class Main extends JFrame implements KeyListener, MouseListener, MouseMotionList
 					// collision
 					enemySurfers.remove(i);
 					i--;
-					playSound("crackle.wav");
 					killsNeeded--;
 					if (!player.shielded)
+					{
+						playSound("blunt injury.wav");
 						player.damage(10);
+					} else
+						playSound("triangle death.wav");
 					continue;
 				}
 				moveSurfer(s, moveByFollowPlayer(s), deltaTime);
@@ -316,7 +319,7 @@ class Main extends JFrame implements KeyListener, MouseListener, MouseMotionList
 						tringlers.remove(i);
 						i--;
 						killsNeeded--;
-						playSound("crackle.wav");
+						playSound("blunt injury.wav");
 						player.damage(10);
 					} else if (t.slowDown)
 					{
@@ -326,7 +329,7 @@ class Main extends JFrame implements KeyListener, MouseListener, MouseMotionList
 						}
 						tringlers.remove(i);
 						i--;
-						playSound("crackle.wav");
+						playSound("triangle death.wav");
 						killsNeeded--;
 					} else
 					{
@@ -338,6 +341,7 @@ class Main extends JFrame implements KeyListener, MouseListener, MouseMotionList
 						t.yVel = tempYVel * 0.35;
 						t.rotation = Math.atan2(t.yVel, t.xVel);
 						player.cantControlTimeLeft = 0.2;
+						playSound("clang.wav");
 					}
 					continue;
 				}
@@ -379,6 +383,7 @@ class Main extends JFrame implements KeyListener, MouseListener, MouseMotionList
 					t.yVel = 10 * Math.sin(angle);
 					t.slowDown = false;
 					t.prevDistPow2 = 9999999;
+					playSound("triangle dash.wav");
 				}
 			}
 		}
@@ -646,6 +651,7 @@ class Main extends JFrame implements KeyListener, MouseListener, MouseMotionList
 			if (killsNeeded <= 0)
 			{
 				challengeLevel += 1;
+				playSound("challenge up.wav");
 				eventTimeLeft = eventFrequency;
 				double ayn = Math.random();
 				if (ayn < 0.5)
