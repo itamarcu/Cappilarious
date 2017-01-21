@@ -647,6 +647,8 @@ class Main extends JFrame implements KeyListener, MouseListener, MouseMotionList
 		enemySurfers = new ArrayList<Surfer>();
 		tringlers = new ArrayList<Tringler>();
 		tringlerCorpses = new ArrayList<TringlerDeath>();
+		if (allSounds != null)
+			stopAllSounds();
 		allSounds = new ArrayList<SoundEffect>();
 
 		if (gameLaunch)
@@ -674,6 +676,12 @@ class Main extends JFrame implements KeyListener, MouseListener, MouseMotionList
 		dashTime = 0;
 		dashCooldown = 1;
 		deathFade = 1;
+	}
+
+	private void stopAllSounds()
+	{
+		for (SoundEffect s : allSounds)
+			s.stop();
 	}
 
 	void events(double deltaTime)
