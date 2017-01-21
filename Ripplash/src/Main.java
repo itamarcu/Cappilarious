@@ -669,7 +669,7 @@ class Main extends JFrame implements KeyListener, MouseListener, MouseMotionList
 		if (gameLaunch)
 		{
 			bgMusicUNDERWATER = new SoundEffect("underwater effect.wav");
-			bgMusic = new SoundEffect("BG_Music.wav"); // not working!!!!!! BUG
+			bgMusic = new SoundEffect("BG_Music.wav");
 			bgMusicUNDERWATER.loop();
 			bgMusic.loop();
 			bgMusic.pause();
@@ -710,7 +710,7 @@ class Main extends JFrame implements KeyListener, MouseListener, MouseMotionList
 				playSound("challenge up.wav");
 				eventTimeLeft = eventFrequency;
 				double ayn = Math.random();
-				if (ayn < 0.5)
+				if (challengeLevel % 2 == 0)
 				{
 					synchronized (enemySurfers)
 					{

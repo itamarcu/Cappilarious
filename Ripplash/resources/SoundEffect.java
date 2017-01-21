@@ -77,6 +77,7 @@ public class SoundEffect
 		paused = false;
 		sound.stop();
 		sound.setFramePosition(0);
+		
 	}
 
 	public void pause()
