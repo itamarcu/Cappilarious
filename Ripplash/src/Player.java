@@ -14,7 +14,7 @@ public class Player extends Surfer
 		radius = 12;
 	}
 
-	public void damage(double d)
+	public boolean damage(double d)
 	{
 		if (injureFlash > 0.5)
 		{
@@ -22,16 +22,19 @@ public class Player extends Surfer
 			life.life -= d;
 			if (life.life < 0)
 				life.life = 0;
+			return true;
 		}
+		return false;
 	}
 
-	public void holdBreath(double dt)
+	public boolean holdBreath(double dt)
 	{
 		underwaterTimer += dt;
 		if (underwaterTimer >= Player.maxUnderwater)
 		{
-			this.damage(5);
 			underwaterTimer = maxUnderwater;
+			return this.damage(5);
 		}
+		return false;
 	}
 }

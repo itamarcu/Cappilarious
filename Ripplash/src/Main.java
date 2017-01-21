@@ -113,6 +113,7 @@ class Main extends JFrame implements KeyListener, MouseListener, MouseMotionList
 			isRestarting = true;
 			deathFadePoint = new double[]
 			{ player.x, player.y };
+			playSound("death fade.wav");
 		}
 		synchronized (waves)
 		{
@@ -190,7 +191,7 @@ class Main extends JFrame implements KeyListener, MouseListener, MouseMotionList
 					player.lastWaveIndex = -1;
 					player.ripple = 1;
 					dashCooldown = 1;
-					playSound("water drip 1.wav");
+					playSound("player dash.wav");
 				}
 			}
 		} else
@@ -223,8 +224,10 @@ class Main extends JFrame implements KeyListener, MouseListener, MouseMotionList
 		if (player.cantControlTimeLeft > 0)
 			player.cantControlTimeLeft -= deltaTime;
 		if (player.lastWaveIndex == -1 && deathFade <= 0)
-			player.holdBreath(deltaTime);
-		else if (player.underwaterTimer > 0)
+		{
+			if (player.holdBreath(deltaTime))
+				playSound("player injury.wav");
+		} else if (player.underwaterTimer > 0)
 			player.underwaterTimer -= deltaTime * 3;
 		if (player.underwaterTimer < 0)
 			player.underwaterTimer = 0;
@@ -276,7 +279,7 @@ class Main extends JFrame implements KeyListener, MouseListener, MouseMotionList
 				{
 					enemySurfers.remove(i);
 					i--;
-					//playSound("whoosh.wav");
+					// playSound("whoosh.wav");
 					killsNeeded--;
 					continue;
 				}
@@ -291,6 +294,7 @@ class Main extends JFrame implements KeyListener, MouseListener, MouseMotionList
 					{
 						playSound("blunt injury.wav");
 						player.damage(10);
+						playSound("player injury.wav");
 					} else
 						playSound("triangle death.wav");
 					continue;
@@ -323,6 +327,7 @@ class Main extends JFrame implements KeyListener, MouseListener, MouseMotionList
 						killsNeeded--;
 						playSound("blunt injury.wav");
 						player.damage(10);
+						playSound("player injury.wav");
 					} else if (t.slowDown)
 					{
 						synchronized (tringlerCorpses)
@@ -356,6 +361,11 @@ class Main extends JFrame implements KeyListener, MouseListener, MouseMotionList
 				t.x += t.xVel * deltaTime;
 				t.y += t.yVel * deltaTime;
 				double speedPow2 = t.xVel * t.xVel + t.yVel * t.yVel;
+				if (speedPow2 > 500 * 500 && t.gonnaPlayDashSound)
+				{
+					t.gonnaPlayDashSound = false;
+					playSound("triangle dash.wav");
+				}
 				if (t.chargeTimeLeft >= t.chargeDelay - 1 && speedPow2 < 600 * 600) // dashing
 				{
 					t.xVel += 6 * t.xVel * deltaTime;
@@ -385,7 +395,7 @@ class Main extends JFrame implements KeyListener, MouseListener, MouseMotionList
 					t.yVel = 10 * Math.sin(angle);
 					t.slowDown = false;
 					t.prevDistPow2 = 9999999;
-					playSound("triangle dash.wav");
+					t.gonnaPlayDashSound = true;
 				}
 			}
 		}
@@ -458,9 +468,9 @@ class Main extends JFrame implements KeyListener, MouseListener, MouseMotionList
 		for (Waver wr : wavers)
 		{
 			buffer.setStroke(new BasicStroke(2));
-			int alpha =(int) (255*(0.5 - 0.5 * wr.timeLeft / wr.freq));
+			float a = (float) (0.5 - 0.5 * wr.timeLeft / wr.freq);
 			int radius = (int) (4 + 30 * Math.sin(3 * wr.timeLeft / wr.freq));
-			buffer.setColor(Colors.opacitate(Colors.waveColor, alpha));
+			buffer.setColor(new Color(0, 0, 0, a));
 			buffer.fillOval((int) (wr.x - radius), (int) (wr.y - radius), 2 * radius, 2 * radius);
 		}
 		// Surfers
@@ -469,10 +479,10 @@ class Main extends JFrame implements KeyListener, MouseListener, MouseMotionList
 			for (Surfer s : enemySurfers)
 			{
 				buffer.setStroke(new BasicStroke(2));
-				int alpha = (int)(255* Math.min(1, 1 - s.underwaterTimer / 1.0));
-				buffer.setColor(Colors.opacitate(Colors.enemyColor, alpha));
+				float alpha = (float) Math.min(1, 1 - s.underwaterTimer / 1.0);
+				buffer.setColor(new Color(0, 0, 0, alpha));
 				buffer.fillOval((int) (s.x - s.radius), (int) (s.y - s.radius), 2 * s.radius, 2 * s.radius);
-				buffer.setColor(Colors.opacitate(Colors.enemyOutline, alpha));
+				buffer.setColor(new Color(1, 1, 1, alpha));
 				buffer.drawOval((int) (s.x - s.radius), (int) (s.y - s.radius), 2 * s.radius, 2 * s.radius);
 			}
 		}
@@ -510,10 +520,10 @@ class Main extends JFrame implements KeyListener, MouseListener, MouseMotionList
 			for (TringlerDeath tc : tringlerCorpses)
 			{
 				buffer.setStroke(new BasicStroke(2));
-				buffer.setColor(Colors.opacitate(Colors.tringlerColor, (int)(tc.pos/0.5*255)));
+				buffer.setColor(Colors.opacitate(Colors.tringlerColor,(int)(tc.pos/0.5*255)));
 				buffer.fillPolygon(TringlerDeath.getPaintablePoints(tc.xPoints1), TringlerDeath.getPaintablePoints(tc.yPoints1), 3);
 				buffer.fillPolygon(TringlerDeath.getPaintablePoints(tc.xPoints2), TringlerDeath.getPaintablePoints(tc.yPoints2), 3);
-				buffer.setColor(Colors.opacitate(Colors.tringlerOutline, (int)(tc.pos/0.5*255)));
+				buffer.setColor(Colors.opacitate(Colors.tringlerOutline,(int)(tc.pos/0.5*255)));
 				buffer.drawPolygon(TringlerDeath.getPaintablePoints(tc.xPoints1), TringlerDeath.getPaintablePoints(tc.yPoints1), 3);
 				buffer.drawPolygon(TringlerDeath.getPaintablePoints(tc.xPoints2), TringlerDeath.getPaintablePoints(tc.yPoints2), 3);
 			}
@@ -783,6 +793,7 @@ class Main extends JFrame implements KeyListener, MouseListener, MouseMotionList
 			deathFadePoint = new double[]
 			{ player.x, player.y };
 			isRestarting = true;
+			playSound("death fade.wav");
 			break;
 		case KeyEvent.VK_ESCAPE:// Exit
 			exitGame();
