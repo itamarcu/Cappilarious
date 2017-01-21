@@ -55,8 +55,8 @@ class Main extends JFrame implements KeyListener, MouseListener, MouseMotionList
 	List<Tringler>				tringlers;
 	List<TringlerDeath>			tringlerCorpses;
 	List<SoundEffect>			allSounds;
-	SoundEffect bgMusic, bgMusicUnderWater;
-	boolean gameLaunch =true;
+	SoundEffect					bgMusic, bgMusicUnderWater;
+	boolean						gameLaunch						= true;
 	double						eventTimeLeft					= 10, eventFrequency = 7;
 	int							challengeLevel					= 0;
 	int							killsNeeded						= 1;
@@ -232,15 +232,18 @@ class Main extends JFrame implements KeyListener, MouseListener, MouseMotionList
 		} else if (player.underwaterTimer > 0)
 		{
 			player.underwaterTimer -= deltaTime * 3;
-			boolean alreadyPlayingIt = false;
-			for (SoundEffect s : allSounds)
-				if (s.name == "enter water.wav")
-				{
-					alreadyPlayingIt = true;
-					break;
-				}
-			if (!alreadyPlayingIt)
-				playSound("enter water.wav");
+			if (player.underwaterTimer > 1)
+			{
+				boolean alreadyPlayingIt = false;
+				for (SoundEffect s : allSounds)
+					if (s.name == "whoosh.wav")
+					{
+						alreadyPlayingIt = true;
+						break;
+					}
+				if (!alreadyPlayingIt)
+					playSound("whoosh.wav");
+			}
 		}
 		if (player.underwaterTimer < 0)
 			player.underwaterTimer = 0;
@@ -653,11 +656,11 @@ class Main extends JFrame implements KeyListener, MouseListener, MouseMotionList
 
 		if (gameLaunch)
 		{
-			bgMusic= new SoundEffect ("BG_Music.mp3");
-			bgMusicUnderWater= new SoundEffect ("Underwater_Effect.mp3");
-			bgMusic.loop();
-			bgMusicUnderWater.loop();
-			bgMusicUnderWater.setVolume(0);
+			// bgMusic= new SoundEffect ("BG_Music.mp3");
+			// bgMusicUnderWater= new SoundEffect ("Underwater_Effect.mp3");
+			// bgMusic.loop();
+			// bgMusicUnderWater.loop();
+			// bgMusicUnderWater.setVolume(0);
 		}
 		player = new Player(0, 0, 450);
 		waves.add(new Wave(player.x + (int) (-4 + 2 * Math.random()), player.y + (int) (-4 + 2 * Math.random()), 60, 100));
@@ -714,19 +717,20 @@ class Main extends JFrame implements KeyListener, MouseListener, MouseMotionList
 			}
 		}
 	}
-	void plunge (boolean in)
+
+	void plunge(boolean in)
 	{
 		if (in)
 		{
 			bgMusic.setVolume(0);
 			bgMusicUnderWater.setVolume(1);
-		}
-		else
+		} else
 		{
 			bgMusic.setVolume(1);
 			bgMusicUnderWater.setVolume(0);
 		}
 	}
+
 	double[] moveByPlayerKeys()
 	{
 		player.x = Math.min(player.x, frameWidth / 2 - extraDistanceHorizontal);
