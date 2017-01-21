@@ -5,6 +5,7 @@ public class Player extends Surfer
 	double					injureFlash			= 1;
 	LifeRing				life				= new LifeRing(100);
 	double					cantControlTimeLeft	= 0;
+	public boolean			plunged				= false;
 	public static double	dashSpeedPow2		= 1600000;
 
 	public Player(int x_, int y_, double maxSpeed)

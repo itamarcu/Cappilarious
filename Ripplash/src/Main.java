@@ -25,9 +25,7 @@ import java.awt.geom.Area;
 import java.awt.geom.Ellipse2D;
 import java.awt.geom.Rectangle2D;
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 
 import javax.swing.JFrame;
 
@@ -231,6 +229,8 @@ class Main extends JFrame implements KeyListener, MouseListener, MouseMotionList
 				playSound("player injury.wav");
 		} else if (player.underwaterTimer > 0)
 		{
+			if (player.plunged)
+				plunge(false);
 			player.underwaterTimer -= deltaTime * 3;
 			if (player.underwaterTimer > 1)
 			{
@@ -656,11 +656,11 @@ class Main extends JFrame implements KeyListener, MouseListener, MouseMotionList
 
 		if (gameLaunch)
 		{
-			// bgMusic= new SoundEffect ("BG_Music.mp3");
-			// bgMusicUnderWater= new SoundEffect ("Underwater_Effect.mp3");
-			// bgMusic.loop();
-			// bgMusicUnderWater.loop();
-			// bgMusicUnderWater.setVolume(0);
+			bgMusic = new SoundEffect("BG_Music.wav");
+			bgMusicUnderWater = new SoundEffect("clang.wav"); //not working!!!!!! BUG
+			bgMusic.loop();
+			bgMusicUnderWater.loop();
+			bgMusicUnderWater.setVolume(0);
 		}
 		player = new Player(0, 0, 450);
 		waves.add(new Wave(player.x + (int) (-4 + 2 * Math.random()), player.y + (int) (-4 + 2 * Math.random()), 60, 100));
@@ -720,6 +720,7 @@ class Main extends JFrame implements KeyListener, MouseListener, MouseMotionList
 
 	void plunge(boolean in)
 	{
+		player.plunged = in;
 		if (in)
 		{
 			bgMusic.setVolume(0);
@@ -769,6 +770,9 @@ class Main extends JFrame implements KeyListener, MouseListener, MouseMotionList
 			Wave w = waves.get(i);
 			if (w.surfable && w.contains(surfer))
 			{
+				if (surfer == player && player.lastWaveIndex == -1)
+					if (!player.plunged)
+						plunge(true);
 				surfer.lastWaveIndex = i;
 				// add velocity
 				double angle = Math.atan2(surfer.y - w.cy, surfer.x - w.cx);
