@@ -53,7 +53,7 @@ class Main extends JFrame implements KeyListener, MouseListener, MouseMotionList
 	List<Tringler>				tringlers;
 	List<TringlerDeath>			tringlerCorpses;
 	List<SoundEffect>			allSounds;
-	SoundEffect					bgMusic, bgMusicUnderWater;
+	SoundEffect					bgMusicUNDERWATER, bgMusic;
 	boolean						gameLaunch						= true;
 	double						eventTimeLeft					= 10, eventFrequency = 7;
 	int							challengeLevel					= 0;
@@ -225,12 +225,24 @@ class Main extends JFrame implements KeyListener, MouseListener, MouseMotionList
 			player.cantControlTimeLeft -= deltaTime;
 		if (player.lastWaveIndex == -1 && deathFade <= 0)
 		{
-			if (player.holdBreath(deltaTime))
-				playSound("player injury.wav");
-		} else if (player.underwaterTimer > 0)
-		{
 			if (player.plunged)
 				plunge(false);
+			if (player.holdBreath(deltaTime))
+				playSound("player injury.wav");
+			if (player.underwaterTimer > 1)
+			{
+				boolean alreadyPlayingIt = false;
+				for (SoundEffect s : allSounds)
+					if (s.name == "bubblething.wav")
+					{
+						alreadyPlayingIt = true;
+						break;
+					}
+				if (!alreadyPlayingIt)
+					playSound("bubblething.wav");
+			}
+		} else if (player.underwaterTimer > 0)
+		{
 			player.underwaterTimer -= deltaTime * 3;
 			if (player.underwaterTimer > 1)
 			{
@@ -656,11 +668,11 @@ class Main extends JFrame implements KeyListener, MouseListener, MouseMotionList
 
 		if (gameLaunch)
 		{
-			// bgMusic = new SoundEffect("BG_Music.wav");
-			// bgMusicUnderWater = new SoundEffect("underwater effect.wav"); //not working!!!!!! BUG
-			// bgMusic.loop();
-			// bgMusicUnderWater.loop();
-			// bgMusicUnderWater.setVolume(0);
+			bgMusicUNDERWATER = new SoundEffect("underwater effect.wav");
+			bgMusic = new SoundEffect("BG_Music.wav"); // not working!!!!!! BUG
+			bgMusicUNDERWATER.loop();
+			bgMusic.loop();
+			bgMusic.pause();
 		}
 		player = new Player(0, 0, 450);
 		waves.add(new Wave(player.x + (int) (-4 + 2 * Math.random()), player.y + (int) (-4 + 2 * Math.random()), 60, 100));
@@ -720,25 +732,40 @@ class Main extends JFrame implements KeyListener, MouseListener, MouseMotionList
 
 	void plunge(boolean in)
 	{
-		System.out.println(bgMusicUnderWater.sound.getFramePosition());
 		player.plunged = in;
 		if (in)
 		{
-			bgMusic.setVolume(0);
-			bgMusicUnderWater.setVolume(1);
+			bgMusicUNDERWATER.pause();
+			bgMusic.cont();
 		} else
 		{
-			bgMusic.setVolume(1);
-			bgMusicUnderWater.setVolume(0);
+			bgMusicUNDERWATER.cont();
+			bgMusic.pause();
 		}
 	}
 
 	double[] moveByPlayerKeys()
 	{
-		player.x = Math.min(player.x, frameWidth / 2 - extraDistanceHorizontal);
-		player.y = Math.min(player.y, frameHeight / 2 - extraDistanceVertical + 20); // sorry
-		player.x = Math.max(player.x, -frameWidth / 2 + extraDistanceHorizontal);
-		player.y = Math.max(player.y, -frameHeight / 2 + extraDistanceVertical);
+		if (player.x < -frameWidth / 2 + extraDistanceHorizontal)
+		{
+			player.x = -frameWidth / 2 + extraDistanceHorizontal;
+			player.lastWaveIndex = -1;
+		}
+		if (player.x > frameWidth / 2 - extraDistanceHorizontal)
+		{
+			player.x = frameWidth / 2 - extraDistanceHorizontal;
+			player.lastWaveIndex = -1;
+		}
+		if (player.y < -frameHeight / 2 + extraDistanceVertical)
+		{
+			player.y = -frameHeight / 2 + extraDistanceVertical;
+			player.lastWaveIndex = -1;
+		}
+		if (player.y > frameHeight / 2 - extraDistanceVertical + 20)
+		{
+			player.y = frameHeight / 2 - extraDistanceVertical + 20;
+			player.lastWaveIndex = -1;
+		}
 		double verticalMovement = 0, horizontalMovement = 0;
 		if (upPressed)
 			verticalMovement -= 1;
