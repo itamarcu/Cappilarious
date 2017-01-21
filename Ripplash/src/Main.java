@@ -80,7 +80,6 @@ class Main extends JFrame implements KeyListener, MouseListener, MouseMotionList
 	Image						bufferImage;												// ignore, unless you want to do stuff with this
 	Graphics					bufferGraphics;												// ignore
 	boolean						test							= false;
-	Color						bgColor							= new Color(50, 150, 255);
 
 	// This is where the magic happens
 	void gameFrame(double deltaTime)
@@ -213,7 +212,7 @@ class Main extends JFrame implements KeyListener, MouseListener, MouseMotionList
 				player.yVel /= sqrtratio;
 			}
 			if (player.ripple % 3 == 0)
-				waves.add(new Wave(player.x, player.y, 70 - 2 * player.ripple, 6, Wave.purple, 30 - 1 * player.ripple));
+				waves.add(new Wave(player.x, player.y, 70 - 2 * player.ripple, 6, 30 - 1 * player.ripple));
 			player.ripple++;
 			dashTime -= deltaTime;
 			player.x += deltaTime * player.xVel;
@@ -435,7 +434,7 @@ class Main extends JFrame implements KeyListener, MouseListener, MouseMotionList
 			{
 				// Draw outlines
 				Wave w = waves.get(i);
-				buffer.setColor(w.color);
+				buffer.setColor(Colors.waveColor);
 				if (w.r2 <= w.width)
 				{
 					buffer.fillOval((int) (w.cx - w.r2), (int) (w.cy - w.r2), (int) (2 * w.r2), (int) (2 * w.r2));
@@ -445,7 +444,7 @@ class Main extends JFrame implements KeyListener, MouseListener, MouseMotionList
 					buffer.drawOval((int) (w.cx - w.r2 + w.width / 2), (int) (w.cy - w.r2 + w.width / 2), (int) (2 * (w.r2 - w.width / 2)), (int) (2 * (w.r2 - w.width / 2)));
 					if (w.infested)
 					{
-						buffer.setColor(Wave.infestation);
+					//	buffer.setColor(Wave.infestation);
 						buffer.setStroke(new BasicStroke((int) (w.width)));
 						buffer.drawArc((int) (w.cx - w.r2 + w.width / 2), (int) (w.cy - w.r2 + w.width / 2), (int) (2 * (w.r2 - w.width / 2)), (int) (2 * (w.r2 - w.width / 2)),
 								(int) (w.plagueStart * 180 / Math.PI), (int) ((w.plagueEnd - w.plagueStart) * 180 / Math.PI));
@@ -497,9 +496,9 @@ class Main extends JFrame implements KeyListener, MouseListener, MouseMotionList
 					}
 				}
 				buffer.setStroke(new BasicStroke(2));
-				buffer.setColor(Tringler.sicklyGreen);
+				buffer.setColor(Colors.tringlerColor);
 				buffer.fillPolygon(xPoints, yPoints, 3);
-				buffer.setColor(Tringler.radGreen);
+				buffer.setColor(Colors.tringlerOutline);
 				buffer.drawPolygon(xPoints, yPoints, 3);
 			}
 		}
@@ -509,10 +508,10 @@ class Main extends JFrame implements KeyListener, MouseListener, MouseMotionList
 			for (TringlerDeath tc : tringlerCorpses)
 			{
 				buffer.setStroke(new BasicStroke(2));
-				buffer.setColor(tc.opacitate(Tringler.sicklyGreen));
+				buffer.setColor(tc.opacitate(Colors.tringlerColor));
 				buffer.fillPolygon(TringlerDeath.getPaintablePoints(tc.xPoints1), TringlerDeath.getPaintablePoints(tc.yPoints1), 3);
 				buffer.fillPolygon(TringlerDeath.getPaintablePoints(tc.xPoints2), TringlerDeath.getPaintablePoints(tc.yPoints2), 3);
-				buffer.setColor(tc.opacitate(Tringler.radGreen));
+				buffer.setColor(tc.opacitate(Colors.tringlerOutline));
 				buffer.drawPolygon(TringlerDeath.getPaintablePoints(tc.xPoints1), TringlerDeath.getPaintablePoints(tc.yPoints1), 3);
 				buffer.drawPolygon(TringlerDeath.getPaintablePoints(tc.xPoints2), TringlerDeath.getPaintablePoints(tc.yPoints2), 3);
 			}
@@ -523,13 +522,13 @@ class Main extends JFrame implements KeyListener, MouseListener, MouseMotionList
 			if (dashTime <= 0)
 			{
 				double choking = Math.min(1, Math.max(0, 1 - player.underwaterTimer / Player.maxUnderwater));
-				buffer.setColor(new Color((int) (player.normalColor.getRed() * choking + player.chokingColor.getRed() * (1 - choking)),
-						(int) (player.normalColor.getGreen() * choking + player.chokingColor.getGreen() * (1 - choking)),
-						(int) (player.normalColor.getBlue() * choking + player.chokingColor.getBlue() * (1 - choking))));
+				buffer.setColor(new Color((int) (Colors.normalColor.getRed() * choking + Colors.chokingColor.getRed() * (1 - choking)),
+						(int) (Colors.normalColor.getGreen() * choking + Colors.chokingColor.getGreen() * (1 - choking)),
+						(int) (Colors.normalColor.getBlue() * choking + Colors.chokingColor.getBlue() * (1 - choking))));
 				if (player.injureFlash <= 0.25)
-					buffer.setColor(player.injuredColor);
+					buffer.setColor(Colors.injuredColor);
 				buffer.fillOval((int) (player.x - player.radius), (int) (player.y - player.radius), 2 * player.radius, 2 * player.radius);
-				buffer.setColor(player.normalOutline);
+				buffer.setColor(Colors.normalOutline);
 				buffer.drawOval((int) (player.x - player.radius), (int) (player.y - player.radius), 2 * player.radius, 2 * player.radius);
 
 			} else
@@ -546,9 +545,9 @@ class Main extends JFrame implements KeyListener, MouseListener, MouseMotionList
 					yPoints[i] = (int) (player.y + player.radius * amount * Math.sin(rotation + TAU / 4 * i));
 				}
 				buffer.setStroke(new BasicStroke(3));
-				buffer.setColor(player.dashColor);
+				buffer.setColor(Colors.dashColor);
 				buffer.fillPolygon(xPoints, yPoints, 4);
-				buffer.setColor(player.dashOutline);
+				buffer.setColor(Colors.dashOutline);
 				buffer.drawPolygon(xPoints, yPoints, 4);
 
 			}
@@ -590,9 +589,9 @@ class Main extends JFrame implements KeyListener, MouseListener, MouseMotionList
 			double position = Math.cos(Math.PI * (2 - deathFade) / 2);
 			double x = frameWidth / 2 + player.x * position;
 			double y = frameHeight / 2 + player.y * position;
-			buffer.setColor(player.normalColor);
+			buffer.setColor(Colors.normalColor);
 			buffer.fillOval((int) (x - player.radius), (int) (y - player.radius), 2 * player.radius, 2 * player.radius);
-			buffer.setColor(player.normalOutline);
+			buffer.setColor(Colors.normalOutline);
 			buffer.drawOval((int) (x - player.radius), (int) (y - player.radius), 2 * player.radius, 2 * player.radius);
 
 		}
@@ -621,14 +620,14 @@ class Main extends JFrame implements KeyListener, MouseListener, MouseMotionList
 		addSounds();
 
 		player = new Player(0, 0, 450);
-		waves.add(new Wave(player.x + (int) (-4 + 2 * Math.random()), player.y + (int) (-4 + 2 * Math.random()), 60, 100, Wave.purple));
+		waves.add(new Wave(player.x + (int) (-4 + 2 * Math.random()), player.y + (int) (-4 + 2 * Math.random()), 60, 100));
 		// for (int i = 0; i < 5; i++)
 		// enemySurfers.add(new Surfer(300 * Math.cos(i * TAU / 5), 300 * Math.sin(i * TAU / 5), 300));
 
-		wavers.add(new Waver(400, 150, 60, 40, 6.0, Wave.purple));
-		wavers.add(new Waver(-400, -150, 60, 40, 6.0, Wave.purple));
-		wavers.add(new Waver(150, -400, 60, 40, 6.0, Wave.purple));
-		wavers.add(new Waver(-150, 400, 60, 40, 6.0, Wave.purple));
+		wavers.add(new Waver(400, 150, 60, 40, 6.0));
+		wavers.add(new Waver(-400, -150, 60, 40, 6.0));
+		wavers.add(new Waver(150, -400, 60, 40, 6.0));
+		wavers.add(new Waver(-150, 400, 60, 40, 6.0));
 		wavers.get(0).timeLeft = 3;
 		wavers.get(1).timeLeft = 3;
 		eventTimeLeft = 8;
@@ -802,6 +801,9 @@ class Main extends JFrame implements KeyListener, MouseListener, MouseMotionList
 		case KeyEvent.VK_S:
 			downPressed = true;
 			break;
+		case KeyEvent.VK_P:
+			Colors.nextColor();
+			break;
 		default:
 			// another key was pressed; do nothing.
 			break;
@@ -957,7 +959,7 @@ class Main extends JFrame implements KeyListener, MouseListener, MouseMotionList
 		if (bufferGraphics != null)
 		{
 			// this clears the offscreen image, not the onscreen one
-			bufferGraphics.setColor(bgColor);
+			bufferGraphics.setColor(Colors.backgroundColor);
 			bufferGraphics.fillRect(0, 0, bufferWidth, bufferHeight);
 
 			// calls the paintbuffer method with buffergraphics

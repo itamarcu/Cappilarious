@@ -1,5 +1,3 @@
-import java.awt.Color;
-
 public class Wave
 {
 	double					cx, cy;
@@ -9,15 +7,12 @@ public class Wave
 	double					plagueEnd;
 	double					width;
 	double					speed;
-	public static Color		purple				= new Color(0, 50, 50, 150);
-	public static Color		infestation			= new Color(0, 100, 0, 250);
 	public double			maxR1				= 1400;
 	public static double	intesificationRate	= 0.1;
-	Color					color;
 	boolean					surfable			= true;
 	boolean damaging =false;
 
-	public Wave(double originX, double originY, double _speed, double _width, Color _color)
+	public Wave(double originX, double originY, double _speed, double _width)
 	{
 		infested = false;
 		cx = originX;
@@ -25,22 +20,21 @@ public class Wave
 		speed = _speed;
 		r1 = -_width;
 		width = _width;
-		color = _color;
 		r2 = 0;
 	}
 
 	/**
 	 * not surfable!
 	 */
-	public Wave(double originX, double originY, double _speed, double _width, Color _color, double maxRadius)
+	public Wave(double originX, double originY, double _speed, double _width, double maxRadius)
 	{
-		this(originX, originY, _speed, _width, _color);
+		this(originX, originY, _speed, _width);
 		maxR1 = maxRadius;
 		surfable = false;
 	}
-	public Wave(double originX, double originY, double _speed, double _width, Color _color, double maxRadius, boolean _damaging)
+	public Wave(double originX, double originY, double _speed, double _width,  double maxRadius, boolean _damaging)
 	{
-		this(originX, originY, _speed, _width, _color, maxRadius);
+		this(originX, originY, _speed, _width, maxRadius);
 		surfable = false;
 		damaging=_damaging;
 	}
