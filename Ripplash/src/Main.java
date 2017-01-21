@@ -45,7 +45,10 @@ class Main extends JFrame implements KeyListener, MouseListener, MouseMotionList
 	Player						player;
 	List<Surfer>				enemySurfers;
 	List<Tringler>				tringlers;
+	List<SoundEffect>			allSounds;
 	double						eventTimeLeft			= 10, eventFrequency = 7;
+	int							challengeLevel			= 0;
+	int							killsNeeded				= 1;
 	int							lastKeyPressed			= -1;
 	double						timeSinceLastKeyPressed	= 999;
 	boolean						dash					= false;
@@ -70,6 +73,16 @@ class Main extends JFrame implements KeyListener, MouseListener, MouseMotionList
 	void gameFrame(double deltaTime)
 	{
 		timeThatPassed += deltaTime;
+		// sounds
+		for (SoundEffect s : allSounds)
+		{
+			s.justActivated = false;
+			if (s.active)
+			{
+				s.stopIfEnded();
+			}
+		}
+
 		synchronized (waves)
 		{
 			for (int i = 0; i < waves.size(); i++)
@@ -206,6 +219,7 @@ class Main extends JFrame implements KeyListener, MouseListener, MouseMotionList
 				{
 					enemySurfers.remove(i);
 					i--;
+					killsNeeded--;
 					continue;
 				}
 				double extraradius = player.shielded ? 10 : 0;
@@ -214,6 +228,7 @@ class Main extends JFrame implements KeyListener, MouseListener, MouseMotionList
 					// collision
 					enemySurfers.remove(i);
 					i--;
+					killsNeeded--;
 					if (!player.shielded)
 						player.damage(10);
 					continue;
@@ -230,6 +245,7 @@ class Main extends JFrame implements KeyListener, MouseListener, MouseMotionList
 				{
 					tringlers.remove(i);
 					i--;
+					killsNeeded--;
 					continue;
 				}
 				double extraradius = player.shielded ? 10 : 0;
@@ -241,11 +257,13 @@ class Main extends JFrame implements KeyListener, MouseListener, MouseMotionList
 					{
 						tringlers.remove(i);
 						i--;
+						killsNeeded--;
 						player.damage(10);
 					} else if (t.slowDown)
 					{
 						tringlers.remove(i);
 						i--;
+						killsNeeded--;
 					} else
 					{
 						double tempXVel = player.xVel;
@@ -300,30 +318,11 @@ class Main extends JFrame implements KeyListener, MouseListener, MouseMotionList
 				}
 			}
 		}
-		eventTimeLeft -= deltaTime;
-		if (eventTimeLeft < 0)
-		{
-			eventTimeLeft = eventFrequency;
-			double ayn = Math.random();
-			if (ayn < 0.5)
-			{
-				synchronized (enemySurfers)
-				{
-					enemySurfers.add(new Surfer(Math.random() * frameWidth - frameWidth / 2, Math.random() * frameHeight - frameHeight / 2, 300));
-					enemySurfers.add(new Surfer(Math.random() * frameWidth - frameWidth / 2, Math.random() * frameHeight - frameHeight / 2, 300));
-					enemySurfers.add(new Surfer(Math.random() * frameWidth - frameWidth / 2, Math.random() * frameHeight - frameHeight / 2, 300));
-					enemySurfers.add(new Surfer(Math.random() * frameWidth - frameWidth / 2, Math.random() * frameHeight - frameHeight / 2, 300));
-				}
-			} else if (ayn < 1.0)
-				synchronized (tringlers)
-				{
-					if (tringlers.size() < 6) // maximum 6 enemy tringlers
-					{
-						tringlers.add(new Tringler(Math.random() * frameWidth - frameWidth / 2, Math.random() * frameHeight - frameHeight / 2));
-						tringlers.add(new Tringler(Math.random() * frameWidth - frameWidth / 2, Math.random() * frameHeight - frameHeight / 2));
-					}
-				}
-		}
+		events(deltaTime);
+
+		for (SoundEffect s : allSounds)
+			if (!s.justActivated && s.active && s.endUnlessMaintained)
+				s.stop();
 	}
 
 	// This is what you use to call draw methods or to just draw. Is called in
@@ -369,9 +368,10 @@ class Main extends JFrame implements KeyListener, MouseListener, MouseMotionList
 		{
 			// Draw plus sign
 			buffer.setStroke(new BasicStroke(2));
-			buffer.setColor(new Color(255 - (int) (255 * wr.timeLeft / wr.freq), 0, 0));
-			buffer.drawLine((int) (wr.x), (int) (wr.y - 20), (int) (wr.x), (int) (wr.y + 20));
-			buffer.drawLine((int) (wr.x - 20), (int) (wr.y), (int) (wr.x + 20), (int) (wr.y));
+			float a = (float) (0.5 - 0.5*wr.timeLeft / wr.freq);
+			int radius = (int)(4+16*Math.sin(3*wr.timeLeft / wr.freq));
+			buffer.setColor(new Color(0, 0, 0, a));
+			buffer.fillOval((int) (wr.x - radius), (int) (wr.y - radius), 2 * radius, 2 * radius);
 		}
 		// Surfers
 		synchronized (enemySurfers)
@@ -476,6 +476,7 @@ class Main extends JFrame implements KeyListener, MouseListener, MouseMotionList
 		wavers = new ArrayList<Waver>();
 		enemySurfers = new ArrayList<Surfer>();
 		tringlers = new ArrayList<Tringler>();
+		allSounds = new ArrayList<SoundEffect>();
 
 		player = new Player(0, 0, 450);
 		waves.add(new Wave(player.x + (int) (-4 + 2 * Math.random()), player.y + (int) (-4 + 2 * Math.random()), 60, 100, Wave.purple));
@@ -489,8 +490,40 @@ class Main extends JFrame implements KeyListener, MouseListener, MouseMotionList
 		wavers.get(0).timeLeft = 3;
 		wavers.get(1).timeLeft = 3;
 		eventTimeLeft = 10;
+		challengeLevel = 0;
+		killsNeeded = 1;
 		dashTime = 0;
 		dashCooldown = 1;
+	}
+
+	void events(double deltaTime)
+	{
+		eventTimeLeft -= deltaTime;
+		if (eventTimeLeft < 0)
+		{
+			if (killsNeeded <= 0)
+			{
+				challengeLevel += 1;
+				eventTimeLeft = eventFrequency;
+				double ayn = Math.random();
+				if (ayn < 0.5)
+				{
+					synchronized (enemySurfers)
+					{
+						killsNeeded = challengeLevel * 2;
+						for (int i = 0; i < challengeLevel * 2; i++)
+							enemySurfers.add(new Surfer(Math.random() * frameWidth - frameWidth / 2, Math.random() * frameHeight - frameHeight / 2, 300));
+
+					}
+				} else if (ayn < 1.0)
+					synchronized (tringlers)
+					{
+						killsNeeded = challengeLevel * 1;
+						for (int i = 0; i < challengeLevel * 1; i++)
+							tringlers.add(new Tringler(Math.random() * frameWidth - frameWidth / 2, Math.random() * frameHeight - frameHeight / 2));
+					}
+			}
+		}
 	}
 
 	double[] moveByPlayerKeys()

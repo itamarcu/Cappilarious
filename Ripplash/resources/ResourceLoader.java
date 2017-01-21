@@ -1,5 +1,8 @@
 import java.awt.image.BufferedImage;
 import javax.imageio.ImageIO;
+import javax.sound.sampled.AudioInputStream;
+import javax.sound.sampled.AudioSystem;
+import javax.sound.sampled.Clip;
 
 public class ResourceLoader
 {
@@ -18,5 +21,20 @@ public class ResourceLoader
 			e.printStackTrace(System.err);
 		}
 		return b;
+	}
+
+	public static Clip getClip(String fileName)
+	{
+		try
+		{
+			Clip c = AudioSystem.getClip();
+			AudioInputStream input = AudioSystem.getAudioInputStream(rl.getClass().getResource("sounds/" + fileName));
+			c.open(input);
+			return c;
+		} catch (Exception e)
+		{
+			e.printStackTrace(System.err);
+		}
+		return null;
 	}
 }
