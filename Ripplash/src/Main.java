@@ -25,7 +25,9 @@ import java.awt.geom.Area;
 import java.awt.geom.Ellipse2D;
 import java.awt.geom.Rectangle2D;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 import javax.swing.JFrame;
 
@@ -52,7 +54,7 @@ class Main extends JFrame implements KeyListener, MouseListener, MouseMotionList
 	List<Surfer>				enemySurfers;
 	List<Tringler>				tringlers;
 	List<TringlerDeath>			tringlerCorpses;
-	List<SoundEffect>			allSounds;
+	Map<String, SoundEffect>	allSounds;
 	double						eventTimeLeft					= 10, eventFrequency = 7;
 	int							challengeLevel					= 0;
 	int							killsNeeded						= 1;
@@ -64,7 +66,7 @@ class Main extends JFrame implements KeyListener, MouseListener, MouseMotionList
 	double						deathFade						= 1;						// 2 =just died, 1 = black screen, 0 = started new game
 	double[]					deathFadePoint					=
 	{ 0, 0 };
-	boolean						restarting						= false;
+	boolean						isRestarting					= false;
 
 	// Stuff that should not be touched
 	private static final long	serialVersionUID				= 1;
@@ -85,7 +87,7 @@ class Main extends JFrame implements KeyListener, MouseListener, MouseMotionList
 	{
 		timeThatPassed += deltaTime;
 		// sounds
-		for (SoundEffect s : allSounds)
+		for (SoundEffect s : allSounds.values())
 		{
 			s.justActivated = false;
 			if (s.active)
@@ -98,18 +100,18 @@ class Main extends JFrame implements KeyListener, MouseListener, MouseMotionList
 		if (deathFade > 0)
 		{
 			deathFade -= deltaTime;
-			if (deathFade <= 1 && restarting)
+			if (deathFade <= 1 && isRestarting)
 			{
 				restart();
-				restarting = false;
+				isRestarting = false;
 				return;
 			}
 		}
-		if (player.life.life <= 0 && !restarting)
+		if (player.life.life <= 0 && !isRestarting)
 		{
 			// game over
 			deathFade = 2;
-			restarting = true;
+			isRestarting = true;
 			deathFadePoint = new double[]
 			{ player.x, player.y };
 		}
@@ -273,6 +275,7 @@ class Main extends JFrame implements KeyListener, MouseListener, MouseMotionList
 				{
 					enemySurfers.remove(i);
 					i--;
+					playSound("crackle.wav");
 					killsNeeded--;
 					continue;
 				}
@@ -282,6 +285,7 @@ class Main extends JFrame implements KeyListener, MouseListener, MouseMotionList
 					// collision
 					enemySurfers.remove(i);
 					i--;
+					playSound("crackle.wav");
 					killsNeeded--;
 					if (!player.shielded)
 						player.damage(10);
@@ -299,14 +303,6 @@ class Main extends JFrame implements KeyListener, MouseListener, MouseMotionList
 				t.y = Math.min(t.y, frameHeight / 2 - extraEnemyDistanceVertical + 20); // sorry
 				t.x = Math.max(t.x, -frameWidth / 2 + extraEnemyDistanceHorizontal);
 				t.y = Math.max(t.y, -frameHeight / 2 + extraEnemyDistanceVertical);
-				if (Math.pow(t.x - player.x, 2) + Math.pow(t.y - player.y, 2) > 1200 * 1200)
-				{
-					tringlerCorpses.add(new TringlerDeath(t, player.x, player.y));
-					tringlers.remove(i);
-					i--;
-					killsNeeded--;
-					continue;
-				}
 				double extraradius = player.shielded ? 10 : 0;
 				if ((!t.slowDown && Math.pow(t.x + 10 * Math.cos(t.rotation) - player.x, 2) + Math.pow(t.y + 10 * Math.sin(t.rotation) - player.y, 2) < Math.pow(player.radius + 4 + extraradius, 2))
 						|| (t.slowDown && Math.pow(t.x - player.x, 2) + Math.pow(t.y - player.y, 2) < Math.pow(player.radius + 16 + extraradius, 2)))
@@ -314,16 +310,24 @@ class Main extends JFrame implements KeyListener, MouseListener, MouseMotionList
 					// collision
 					if (!player.shielded)
 					{
-						tringlerCorpses.add(new TringlerDeath(t, player.x, player.y));
+						synchronized (tringlerCorpses)
+						{
+							tringlerCorpses.add(new TringlerDeath(t, player.x, player.y));
+						}
 						tringlers.remove(i);
 						i--;
 						killsNeeded--;
+						playSound("crackle.wav");
 						player.damage(10);
 					} else if (t.slowDown)
 					{
-						tringlerCorpses.add(new TringlerDeath(t, player.x, player.y));
+						synchronized (tringlerCorpses)
+						{
+							tringlerCorpses.add(new TringlerDeath(t, player.x, player.y));
+						}
 						tringlers.remove(i);
 						i--;
+						playSound("crackle.wav");
 						killsNeeded--;
 					} else
 					{
@@ -394,9 +398,16 @@ class Main extends JFrame implements KeyListener, MouseListener, MouseMotionList
 		}
 		events(deltaTime);
 
-		for (SoundEffect s : allSounds)
+		for (SoundEffect s : allSounds.values())
 			if (!s.justActivated && s.active && s.endUnlessMaintained)
 				s.stop();
+	}
+
+	void playSound(String string)
+	{
+		SoundEffect sound = new SoundEffect(string);
+		sound.play();
+		allSounds.put(string, sound);
 	}
 
 	// This is what you use to call draw methods or to just draw. Is called in
@@ -487,7 +498,7 @@ class Main extends JFrame implements KeyListener, MouseListener, MouseMotionList
 				buffer.drawPolygon(xPoints, yPoints, 3);
 			}
 		}
-		// tringlr corpses
+		// tringler corpses
 		synchronized (tringlerCorpses)
 		{
 			for (TringlerDeath tc : tringlerCorpses)
@@ -502,55 +513,58 @@ class Main extends JFrame implements KeyListener, MouseListener, MouseMotionList
 			}
 		}
 		// Player
-		if (dashTime <= 0)
+		if (player != null)
 		{
-			double choking = Math.min(1, Math.max(0, 1 - player.underwaterTimer / Player.maxUnderwater));
-			buffer.setColor(new Color((int) (player.normalColor.getRed() * choking + player.chokingColor.getRed() * (1 - choking)),
-					(int) (player.normalColor.getGreen() * choking + player.chokingColor.getGreen() * (1 - choking)),
-					(int) (player.normalColor.getBlue() * choking + player.chokingColor.getBlue() * (1 - choking))));
-			if (player.injureFlash <= 0.15)
-				buffer.setColor(player.injuredColor);
-			buffer.fillOval((int) (player.x - player.radius), (int) (player.y - player.radius), 2 * player.radius, 2 * player.radius);
-			buffer.setColor(player.normalOutline);
-			buffer.drawOval((int) (player.x - player.radius), (int) (player.y - player.radius), 2 * player.radius, 2 * player.radius);
-
-		} else
-		{
-			// dashing diamond
-			int[] xPoints = new int[4];
-			int[] yPoints = new int[4];
-			for (int i = 0; i < 4; i++)
+			if (dashTime <= 0)
 			{
-				double speedRatio = (player.xVel * player.xVel + player.yVel * player.yVel) / (800 * 800);
-				double amount = i == 2 ? 1 + 1 * speedRatio : 1;
-				double rotation = Math.atan2(player.yVel, player.xVel);
-				xPoints[i] = (int) (player.x + player.radius * amount * Math.cos(rotation + TAU / 4 * i));
-				yPoints[i] = (int) (player.y + player.radius * amount * Math.sin(rotation + TAU / 4 * i));
-			}
-			buffer.setStroke(new BasicStroke(3));
-			buffer.setColor(player.dashColor);
-			buffer.fillPolygon(xPoints, yPoints, 4);
-			buffer.setColor(player.dashOutline);
-			buffer.drawPolygon(xPoints, yPoints, 4);
+				double choking = Math.min(1, Math.max(0, 1 - player.underwaterTimer / Player.maxUnderwater));
+				buffer.setColor(new Color((int) (player.normalColor.getRed() * choking + player.chokingColor.getRed() * (1 - choking)),
+						(int) (player.normalColor.getGreen() * choking + player.chokingColor.getGreen() * (1 - choking)),
+						(int) (player.normalColor.getBlue() * choking + player.chokingColor.getBlue() * (1 - choking))));
+				if (player.injureFlash <= 0.25)
+					buffer.setColor(player.injuredColor);
+				buffer.fillOval((int) (player.x - player.radius), (int) (player.y - player.radius), 2 * player.radius, 2 * player.radius);
+				buffer.setColor(player.normalOutline);
+				buffer.drawOval((int) (player.x - player.radius), (int) (player.y - player.radius), 2 * player.radius, 2 * player.radius);
 
+			} else
+			{
+				// dashing diamond
+				int[] xPoints = new int[4];
+				int[] yPoints = new int[4];
+				for (int i = 0; i < 4; i++)
+				{
+					double speedRatio = (player.xVel * player.xVel + player.yVel * player.yVel) / (800 * 800);
+					double amount = i == 2 ? 1 + 1 * speedRatio : 1;
+					double rotation = Math.atan2(player.yVel, player.xVel);
+					xPoints[i] = (int) (player.x + player.radius * amount * Math.cos(rotation + TAU / 4 * i));
+					yPoints[i] = (int) (player.y + player.radius * amount * Math.sin(rotation + TAU / 4 * i));
+				}
+				buffer.setStroke(new BasicStroke(3));
+				buffer.setColor(player.dashColor);
+				buffer.fillPolygon(xPoints, yPoints, 4);
+				buffer.setColor(player.dashOutline);
+				buffer.drawPolygon(xPoints, yPoints, 4);
+
+			}
+			// Life Ring
+			/*
+			 * buffer.setColor(Color.BLACK); buffer.setStroke(new BasicStroke((int) (6))); buffer.drawArc((int)player.x-player.radius, (int)player.y-player.radius, player.radius*2, player.radius*2, 0, (int)360);
+			 */
+			buffer.setColor(player.life.getColor());
+			buffer.setStroke(new BasicStroke((int) (4)));
+			int gap = 5;
+			buffer.drawArc((int) player.x - player.radius - gap, (int) player.y - player.radius - gap, (player.radius + gap) * 2, (player.radius + gap) * 2, (int) (player.life.rotation),
+					(int) (player.life.getAngle() / TAU * 180));
+			buffer.drawArc((int) player.x - player.radius - gap, (int) player.y - player.radius - gap, (player.radius + gap) * 2, (player.radius + gap) * 2, (int) (player.life.rotation) + 180,
+					(int) (player.life.getAngle() / TAU * 180));
 		}
-		// Life Ring
-		/*
-		 * buffer.setColor(Color.BLACK); buffer.setStroke(new BasicStroke((int) (6))); buffer.drawArc((int)player.x-player.radius, (int)player.y-player.radius, player.radius*2, player.radius*2, 0, (int)360);
-		 */
-		buffer.setColor(player.life.getColor());
-		buffer.setStroke(new BasicStroke((int) (4)));
-		int gap = 5;
-		buffer.drawArc((int) player.x - player.radius - gap, (int) player.y - player.radius - gap, (player.radius + gap) * 2, (player.radius + gap) * 2, (int) (player.life.rotation),
-				(int) (player.life.getAngle() / TAU * 180));
-		buffer.drawArc((int) player.x - player.radius - gap, (int) player.y - player.radius - gap, (player.radius + gap) * 2, (player.radius + gap) * 2, (int) (player.life.rotation) + 180,
-				(int) (player.life.getAngle() / TAU * 180));
 		// Move camera back
 		buffer.setTransform(original);
 		// draw black rectangle except for constantly-rowing circle outwards from middle
 		if (deathFade <= 1)
 		{
-			double maxRad = 2 * frameWidth;
+			double maxRad = 2.4 * frameWidth;
 			double radius = maxRad / 2 * (1 - deathFade);
 			Shape circle = new Ellipse2D.Double(deathFadePoint[0] + frameWidth / 2 - radius, deathFadePoint[1] + frameHeight / 2 - radius, 2 * radius, 2 * radius);
 			Area area = new Area(new Rectangle2D.Double(0, 0, frameWidth, frameHeight));
@@ -560,12 +574,12 @@ class Main extends JFrame implements KeyListener, MouseListener, MouseMotionList
 			buffer.fillRect(0, 0, frameWidth, frameHeight);
 		} else if (deathFade <= 2)
 		{
-			double maxRad = 2 * frameWidth;
+			double maxRad = 2.4 * frameWidth;
 			double radius = maxRad / 2 * (2 - deathFade);
 			buffer.setColor(Color.black);
 			buffer.fillOval((int) (deathFadePoint[0] + frameWidth / 2 - radius), (int) (deathFadePoint[1] + frameHeight / 2 - radius), (int) (2 * radius), (int) (2 * radius));
 		}
-		if (deathFade > 0)
+		if (player != null && deathFade > 0)
 		{
 			// draw player above everything, moving to spawn
 			double position = Math.cos(Math.PI * (2 - deathFade) / 2);
@@ -578,6 +592,7 @@ class Main extends JFrame implements KeyListener, MouseListener, MouseMotionList
 
 		}
 		buffer.setClip(null);
+
 	}
 
 	// Setup of everything! Put stuff in here, not in Main()!
@@ -597,7 +612,8 @@ class Main extends JFrame implements KeyListener, MouseListener, MouseMotionList
 		enemySurfers = new ArrayList<Surfer>();
 		tringlers = new ArrayList<Tringler>();
 		tringlerCorpses = new ArrayList<TringlerDeath>();
-		allSounds = new ArrayList<SoundEffect>();
+		allSounds = new HashMap<String, SoundEffect>();
+		addSounds();
 
 		player = new Player(0, 0, 450);
 		waves.add(new Wave(player.x + (int) (-4 + 2 * Math.random()), player.y + (int) (-4 + 2 * Math.random()), 60, 100, Wave.purple));
@@ -616,6 +632,11 @@ class Main extends JFrame implements KeyListener, MouseListener, MouseMotionList
 		dashTime = 0;
 		dashCooldown = 1;
 		deathFade = 1;
+	}
+
+	void addSounds()
+	{
+
 	}
 
 	void events(double deltaTime)
@@ -754,7 +775,7 @@ class Main extends JFrame implements KeyListener, MouseListener, MouseMotionList
 			deathFade = 2;
 			deathFadePoint = new double[]
 			{ player.x, player.y };
-			restarting = true;
+			isRestarting = true;
 			break;
 		case KeyEvent.VK_ESCAPE:// Exit
 			exitGame();
