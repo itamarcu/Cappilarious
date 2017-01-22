@@ -1,5 +1,7 @@
+import java.awt.AlphaComposite;
 import java.awt.BasicStroke;
 import java.awt.Color;
+import java.awt.Composite;
 import java.awt.Frame;
 import java.awt.Graphics;
 import java.awt.Graphics2D;
@@ -62,7 +64,8 @@ class Main extends JFrame implements KeyListener, MouseListener, MouseMotionList
 	double						timeSinceLastKeyPressed			= 999;
 	boolean						dash							= false;
 	double						dashTime						= -1;
-	double						dashCooldown					= 1;
+	double						dashCooldownTimer				= 0;
+	double						dashCooldown					= 0.9;
 	double						deathFade						= 1;						// 2 =just died, 1 = black screen, 0 = started new game
 	double[]					deathFadePoint					=
 	{ 0, 0 };
@@ -190,7 +193,7 @@ class Main extends JFrame implements KeyListener, MouseListener, MouseMotionList
 					player.shielded = true;
 					player.lastWaveIndex = -1;
 					player.ripple = 1;
-					dashCooldown = 1;
+					dashCooldownTimer = dashCooldown;
 					playSound("player dash.wav");
 				}
 			}
@@ -227,8 +230,9 @@ class Main extends JFrame implements KeyListener, MouseListener, MouseMotionList
 		{
 			if (player.plunged)
 				plunge(false);
-			if (player.holdBreath(deltaTime))
-				playSound("player injury.wav");
+			if (dashTime <= 0)
+				if (player.holdBreath(deltaTime))
+					playSound("player injury.wav");
 			if (player.underwaterTimer > 1)
 			{
 				boolean alreadyPlayingIt = false;
@@ -243,7 +247,7 @@ class Main extends JFrame implements KeyListener, MouseListener, MouseMotionList
 			}
 		} else if (player.underwaterTimer > 0)
 		{
-			player.underwaterTimer -= deltaTime * 3;
+			player.underwaterTimer -= deltaTime * 2;
 			if (player.underwaterTimer > 1)
 			{
 				boolean alreadyPlayingIt = false;
@@ -262,8 +266,8 @@ class Main extends JFrame implements KeyListener, MouseListener, MouseMotionList
 		if (player.injureFlash < 1)
 			player.injureFlash += deltaTime;
 		timeSinceLastKeyPressed += deltaTime;
-		if (dashCooldown > 0)
-			dashCooldown -= deltaTime;
+		if (dashCooldownTimer > 0)
+			dashCooldownTimer -= deltaTime;
 		player.life.rotate(deltaTime);
 		for (int i = 0; i < wavers.size(); i++)
 		{
@@ -591,7 +595,12 @@ class Main extends JFrame implements KeyListener, MouseListener, MouseMotionList
 					yPoints[i] = (int) (player.y + player.radius * amount * Math.sin(rotation + TAU / 4 * i));
 				}
 				buffer.setStroke(new BasicStroke(3));
-				buffer.setColor(Colors.dashColor);
+				double choking = Math.min(1, Math.max(0, 1 - player.underwaterTimer / Player.maxUnderwater));
+				buffer.setColor(new Color((int) (Colors.dashColor.getRed() * choking + Colors.chokingColor.getRed() * (1 - choking)),
+						(int) (Colors.dashColor.getGreen() * choking + Colors.chokingColor.getGreen() * (1 - choking)),
+						(int) (Colors.dashColor.getBlue() * choking + Colors.chokingColor.getBlue() * (1 - choking))));
+				if (player.injureFlash <= 0.25)
+					buffer.setColor(Colors.injuredColor);
 				buffer.fillPolygon(xPoints, yPoints, 4);
 				buffer.setColor(Colors.dashOutline);
 				buffer.drawPolygon(xPoints, yPoints, 4);
@@ -622,6 +631,7 @@ class Main extends JFrame implements KeyListener, MouseListener, MouseMotionList
 			buffer.setClip(area);
 			buffer.setColor(Color.black);
 			buffer.fillRect(0, 0, frameWidth, frameHeight);
+			buffer.setClip(null);
 		} else if (deathFade <= 2)
 		{
 			double maxRad = 2.4 * frameWidth;
@@ -629,7 +639,7 @@ class Main extends JFrame implements KeyListener, MouseListener, MouseMotionList
 			buffer.setColor(Color.black);
 			buffer.fillOval((int) (deathFadePoint[0] + frameWidth / 2 - radius), (int) (deathFadePoint[1] + frameHeight / 2 - radius), (int) (2 * radius), (int) (2 * radius));
 		}
-		if (player != null && deathFade > 0)
+		if (deathFade > 0)
 		{
 			// draw player above everything, moving to spawn
 			double position = Math.cos(Math.PI * (2 - deathFade) / 2);
@@ -639,9 +649,23 @@ class Main extends JFrame implements KeyListener, MouseListener, MouseMotionList
 			buffer.fillOval((int) (x - player.radius), (int) (y - player.radius), 2 * player.radius, 2 * player.radius);
 			buffer.setColor(Colors.normalOutline);
 			buffer.drawOval((int) (x - player.radius), (int) (y - player.radius), 2 * player.radius, 2 * player.radius);
-
 		}
-		buffer.setClip(null);
+		if (player.underwaterTimer > 0)
+		{
+			float alpha = (float) (player.underwaterTimer / Player.maxUnderwater);
+			Composite defaultComposite = buffer.getComposite();
+			buffer.setComposite(AlphaComposite.getInstance(AlphaComposite.SRC_OVER, alpha));
+			buffer.drawImage(Resources.darkEdges, 0, 0, frameWidth, frameHeight, this);
+			buffer.setComposite(defaultComposite);
+		}
+		if (player.injureFlash < 0.3)
+		{
+			float alpha = (float) (0.51 - Math.abs(0.5 - player.injureFlash / 0.3));
+			Composite defaultComposite = buffer.getComposite();
+			buffer.setComposite(AlphaComposite.getInstance(AlphaComposite.SRC_OVER, alpha));
+			buffer.drawImage(Resources.redEdges, 0, 0, frameWidth, frameHeight, this);
+			buffer.setComposite(defaultComposite);
+		}
 
 	}
 
@@ -668,16 +692,16 @@ class Main extends JFrame implements KeyListener, MouseListener, MouseMotionList
 
 		if (gameLaunch)
 		{
+			gameLaunch = false;
 			bgMusicUNDERWATER = new SoundEffect("underwater effect.wav");
 			bgMusic = new SoundEffect("BG_Music.wav");
 			bgMusicUNDERWATER.loop();
 			bgMusic.loop();
 			bgMusic.pause();
+			Colors.nextColor();
 		}
 		player = new Player(0, 0, 450);
 		waves.add(new Wave(player.x + (int) (-4 + 2 * Math.random()), player.y + (int) (-4 + 2 * Math.random()), 60, 100));
-		// for (int i = 0; i < 5; i++)
-		// enemySurfers.add(new Surfer(300 * Math.cos(i * TAU / 5), 300 * Math.sin(i * TAU / 5), 300));
 
 		wavers.add(new Waver(400, 150, 60, 40, 6.0));
 		wavers.add(new Waver(-400, -150, 60, 40, 6.0));
@@ -689,7 +713,7 @@ class Main extends JFrame implements KeyListener, MouseListener, MouseMotionList
 		challengeLevel = 1;
 		killsNeeded = 0;
 		dashTime = 0;
-		dashCooldown = 1;
+		dashCooldownTimer = 1;
 		deathFade = 1;
 	}
 
@@ -709,14 +733,14 @@ class Main extends JFrame implements KeyListener, MouseListener, MouseMotionList
 				challengeLevel += 1;
 				playSound("challenge up.wav");
 				eventTimeLeft = eventFrequency;
-				double ayn = Math.random();
+				double ayn = Math.random(); // ayn rand
 				if (challengeLevel % 2 == 0)
 				{
 					synchronized (enemySurfers)
 					{
 						killsNeeded = challengeLevel * 2;
 						for (int i = 0; i < challengeLevel * 2; i++)
-							enemySurfers.add(new Surfer(Math.random() * frameWidth - frameWidth / 2, Math.random() * frameHeight - frameHeight / 2, 300));
+							enemySurfers.add(new Surfer(Math.random() * frameWidth - frameWidth / 2, Math.random() * frameHeight - frameHeight / 2, 500));
 
 					}
 				} else if (ayn < 1.0)
@@ -861,7 +885,7 @@ class Main extends JFrame implements KeyListener, MouseListener, MouseMotionList
 		{
 			lastKeyPressed = e.getKeyCode();
 			timeSinceLastKeyPressed = 0;
-		} else if (player.lastWaveIndex != -1 && dashCooldown <= 0 && timeSinceLastKeyPressed <= 0.4)
+		} else if (dashCooldownTimer <= 0 && timeSinceLastKeyPressed <= 0.4)
 			dash = true;
 		switch (e.getKeyCode())
 		{
@@ -1046,7 +1070,7 @@ class Main extends JFrame implements KeyListener, MouseListener, MouseMotionList
 		if (bufferWidth != getSize().width || bufferHeight != getSize().height || bufferImage == null || bufferGraphics == null)
 			adjustbuffer();
 
-		if (bufferGraphics != null)
+		if (!gameLaunch && bufferGraphics != null)
 		{
 			// this clears the offscreen image, not the onscreen one
 			bufferGraphics.setColor(Colors.backgroundColor);

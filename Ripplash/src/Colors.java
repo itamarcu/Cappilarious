@@ -2,23 +2,23 @@ import java.awt.Color;
 
 public class Colors
 {
-	public static Color	backgroundColor	= new Color(50, 150, 255);
+	public static Color	backgroundColor;
 	// player
-	public static Color	normalColor		= new Color(200, 225, 255);
-	public static Color	dashColor		= new Color(200, 225, 255);
-	public static Color	normalOutline	= new Color(150, 0, 50);
-	public static Color	dashOutline		= new Color(225, 100, 255);
-	public static Color	injuredColor	= Color.red;
-	public static Color	chokingColor	= Color.white;
+	public static Color	normalColor;
+	public static Color	dashColor;
+	public static Color	normalOutline;
+	public static Color	dashOutline;
+	public static Color	injuredColor;
+	public static Color	chokingColor;
 	// enemy surfer
-	public static Color	enemyColor		= new Color(200, 225, 255);
-	public static Color	enemyOutline	= new Color(150, 0, 50);
+	public static Color	enemyColor;
+	public static Color	enemyOutline;
 	// tringler
-	public static Color	tringlerColor	= new Color(255, 255, 255);
-	public static Color	tringlerOutline	= new Color(0, 0, 0);
+	public static Color	tringlerColor;
+	public static Color	tringlerOutline;
 	// waves
-	public static Color	waveColor		= new Color(0, 50, 50, 150);
-	public static int	curr			= 0;
+	public static Color	waveColor;
+	public static int	curr	= -1; //to start at 1
 
 	// public static Color infestation = new Color(0, 100, 0, 250);
 	public static void setColors(int skin)
@@ -28,8 +28,8 @@ public class Colors
 		case 0:
 			backgroundColor = new Color(50, 150, 255);
 			// player
-			normalColor = new Color(200, 225, 255);
-			dashColor = new Color(200, 225, 255);
+			normalColor = new Color(100, 255, 0);
+			dashColor = new Color(100, 255, 0);
 			normalOutline = new Color(150, 0, 50);
 			dashOutline = new Color(225, 100, 255);
 			injuredColor = Color.red;

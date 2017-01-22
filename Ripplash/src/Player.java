@@ -1,7 +1,7 @@
 public class Player extends Surfer
 {
 	int						ripple				= 0;
-	public static double	maxUnderwater		= 2;
+	public static double	maxUnderwater		= 1.5; //not including dash
 	double					injureFlash			= 1;
 	LifeRing				life				= new LifeRing(100);
 	double					cantControlTimeLeft	= 0;
@@ -33,7 +33,7 @@ public class Player extends Surfer
 		underwaterTimer += dt;
 		if (underwaterTimer >= Player.maxUnderwater)
 		{
-			underwaterTimer = maxUnderwater;
+			underwaterTimer = Player.maxUnderwater;
 			return this.damage(5);
 		}
 		return false;
