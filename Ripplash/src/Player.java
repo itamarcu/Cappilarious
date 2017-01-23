@@ -7,12 +7,16 @@ public class Player extends Surfer
 	double					cantControlTimeLeft	= 0;
 	public boolean			plunged				= false;
 	public static double	dashSpeedPow2		= 1600000;
+	public static int normalRadius = 12;
+	public static int dashHitRadius = 24;
+	int hitRadius;
 
 	public Player(int x_, int y_, double maxSpeed)
 	{
 		super(x_, y_, maxSpeed);
 		underwaterTimer = 0;
-		radius = 12;
+		radius = Player.normalRadius;
+		hitRadius = radius;
 	}
 
 	public boolean damage(double d)

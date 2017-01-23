@@ -178,6 +178,7 @@ class Main extends JFrame implements KeyListener, MouseListener, MouseMotionList
 
 		if (dashTime <= 0)
 		{
+			player.hitRadius = player.radius;
 			player.shielded = false;
 			double[] direction = moveByPlayerKeys();
 			moveSurfer(player, direction, deltaTime);
@@ -195,6 +196,7 @@ class Main extends JFrame implements KeyListener, MouseListener, MouseMotionList
 					player.ripple = 1;
 					dashCooldownTimer = dashCooldown;
 					playSound("player dash.wav");
+					player.hitRadius=Player.dashHitRadius;
 				}
 			}
 		} else
@@ -212,7 +214,8 @@ class Main extends JFrame implements KeyListener, MouseListener, MouseMotionList
 			}
 			double vel2 = player.xVel * player.xVel + player.yVel * player.yVel;
 			double sqrtratio = Math.sqrt(Math.abs(vel2 / Player.dashSpeedPow2));
-			if (sqrtratio > 1)
+			// limit player dash speed
+			if (sqrtratio > 1 && player.cantControlTimeLeft <= 0)
 			{
 				player.xVel /= sqrtratio;
 				player.yVel /= sqrtratio;
@@ -316,7 +319,7 @@ class Main extends JFrame implements KeyListener, MouseListener, MouseMotionList
 					continue;
 				}
 				double extraradius = player.shielded ? 10 : 0;
-				if (Math.pow(s.x - player.x, 2) + Math.pow(s.y - player.y, 2) < Math.pow(player.radius + s.radius + extraradius, 2))
+				if (Math.pow(s.x - player.x, 2) + Math.pow(s.y - player.y, 2) < Math.pow(player.hitRadius + s.radius + extraradius, 2))
 				{
 					// collision
 					enemySurfers.remove(i);
@@ -343,9 +346,8 @@ class Main extends JFrame implements KeyListener, MouseListener, MouseMotionList
 				t.y = Math.min(t.y, frameHeight / 2 - extraEnemyDistanceVertical + 20); // sorry
 				t.x = Math.max(t.x, -frameWidth / 2 + extraEnemyDistanceHorizontal);
 				t.y = Math.max(t.y, -frameHeight / 2 + extraEnemyDistanceVertical);
-				double extraradius = player.shielded ? 10 : 0;
-				if ((!t.slowDown && Math.pow(t.x + 10 * Math.cos(t.rotation) - player.x, 2) + Math.pow(t.y + 10 * Math.sin(t.rotation) - player.y, 2) < Math.pow(player.radius + 4 + extraradius, 2))
-						|| (t.slowDown && Math.pow(t.x - player.x, 2) + Math.pow(t.y - player.y, 2) < Math.pow(player.radius + 16 + extraradius, 2)))
+				if ((!t.slowDown && Math.pow(t.x + 10 * Math.cos(t.rotation) - player.x, 2) + Math.pow(t.y + 10 * Math.sin(t.rotation) - player.y, 2) < Math.pow(player.hitRadius + 4, 2))
+						|| (t.slowDown && Math.pow(t.x - player.x, 2) + Math.pow(t.y - player.y, 2) < Math.pow(player.hitRadius + 16, 2)))
 				{
 					// collision
 					if (!player.shielded)
@@ -374,12 +376,13 @@ class Main extends JFrame implements KeyListener, MouseListener, MouseMotionList
 					{
 						double tempXVel = player.xVel;
 						double tempYVel = player.yVel;
-						player.xVel = t.xVel * 1;
-						player.yVel = t.yVel * 1;
+						player.xVel = t.xVel * 1.5;
+						player.yVel = t.yVel * 1.5;
 						t.xVel = tempXVel * 0.35;
 						t.yVel = tempYVel * 0.35;
 						t.rotation = Math.atan2(t.yVel, t.xVel);
-						player.cantControlTimeLeft = 0.2;
+						player.cantControlTimeLeft = 0.6;
+						player.hitRadius = 1; //no more hitting!
 						playSound("clang.wav");
 					}
 					continue;
